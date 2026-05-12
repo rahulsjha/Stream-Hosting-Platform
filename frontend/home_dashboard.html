@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Second Chat — Dashboard</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #020208;
+  --bg1: #050510;
+  --bg2: #080818;
+  --surface: #0c0c1e;
+  --surface2: #101028;
+  --red: #ff1744;
+  --redglow: rgba(255,23,68,0.35);
+  --violet: #7c3aed;
+  --violet2: #a855f7;
+  --cyan: #06b6d4;
+  --gold: #f59e0b;
+  --green: #10b981;
+  --text: #f1efff;
+  --muted: #64617a;
+  --dim: #242238;
+  --border: rgba(124,58,237,0.15);
+  --border2: rgba(255,23,68,0.2);
+  --glass: rgba(12,12,30,0.75);
+  --glass2: rgba(255,255,255,0.03);
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --sidebar-w: 260px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;cursor:auto!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);overflow-x:hidden;display:flex}
+
+/* ─── CURSOR ─── */
+#cur,#cur-ring{display:none}
+#cur{position:fixed;width:10px;height:10px;background:var(--red);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference;transition:width .15s,height .15s}
+#cur-ring{position:fixed;width:38px;height:38px;border:1px solid rgba(255,23,68,.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .28s cubic-bezier(.23,1,.32,1)}
+body:has(a:hover) #cur,body:has(button:hover) #cur,body:has(.nav-item:hover) #cur{width:20px;height:20px}
+body:has(a:hover) #cur-ring,body:has(button:hover) #cur-ring,body:has(.nav-item:hover) #cur-ring{width:56px;height:56px;border-color:rgba(124,58,237,.6)}
+
+/* ─── BACKGROUND CANVAS ─── */
+#bg-canvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.6}
+
+/* ─── SCANLINES ─── */
+.scanlines{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);animation:scanMove 10s linear infinite}
+@keyframes scanMove{0%{background-position:0 0}100%{background-position:0 100px}}
+
+/* ═══════════════════════════════
+   SIDEBAR
+══════════════════════════════════ */
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);
+  background:rgba(5,5,16,0.95);
+  border-right:1px solid rgba(124,58,237,0.12);
+  display:flex;flex-direction:column;
+  z-index:100;
+  backdrop-filter:blur(30px);
+  overflow:hidden;
+}
+.sidebar::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 20% 80%,rgba(124,58,237,.08),transparent 60%),
+             radial-gradient(circle at 80% 10%,rgba(255,23,68,.05),transparent 50%);
+  pointer-events:none;
+}
+/* Animated side accent */
+.sidebar::after{
+  content:'';position:absolute;right:0;top:0;bottom:0;width:1px;
+  background:linear-gradient(to bottom,transparent,rgba(124,58,237,.4) 30%,rgba(255,23,68,.3) 60%,transparent);
+  animation:sideGlow 4s ease-in-out infinite alternate;
+}
+@keyframes sideGlow{0%{opacity:.4}100%{opacity:1}}
+
+/* Logo */
+.sidebar-logo{
+  padding:24px 24px 20px;
+  display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  position:relative;z-index:2;
+  text-decoration:none;color:inherit;
+}
+.sidebar-logo-wordmark{display:block;width:180px;max-width:100%;height:auto;filter:drop-shadow(0 0 20px rgba(255,23,68,.16))}
+.logo-icon{
+  width:72px;height:72px;
+  background:transparent;
+  border-radius:18px;flex-shrink:0;
+  box-shadow:0 0 24px var(--redglow),0 0 50px rgba(124,58,237,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:#fff;
+}
+.logo-icon img{width:100%;height:100%;object-fit:contain;display:block;}
+.logo-icon svg,.feed-icon svg,.plat-icon svg,.key-plat-icon svg,.stream-thumb svg{stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.logo-icon svg{width:16px;height:16px}
+.logo-text{font-family:var(--font-display);font-size:22px;letter-spacing:2px;background:linear-gradient(135deg,#fff 30%,var(--violet2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* Live status badge */
+.sidebar-status{
+  margin:16px 16px 0;
+  display:flex;align-items:center;gap:8px;
+  background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.18);
+  border-radius:8px;padding:8px 14px;
+  position:relative;z-index:2;
+}
+.status-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pdot 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pdot{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}50%{box-shadow:0 0 0 5px rgba(16,185,129,0)}}
+.status-text{font-family:var(--font-mono);font-size:10px;color:var(--green);letter-spacing:.06em}
+.status-count{margin-left:auto;font-family:var(--font-display);font-size:16px;color:var(--green)}
+
+/* Nav sections */
+.nav-section{margin-top:20px;padding:0 12px;position:relative;z-index:2}
+.nav-section-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;padding:0 12px;margin-bottom:8px;opacity:.7}
+
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 14px;border-radius:10px;
+  cursor:none;transition:all .22s;
+  position:relative;overflow:hidden;
+  color:var(--muted);font-size:13px;font-weight:600;letter-spacing:.02em;
+  margin-bottom:3px;
+}
+.nav-item::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(255,23,68,.08));opacity:0;transition:opacity .22s;border-radius:10px}
+.nav-item:hover{color:var(--text)}
+.nav-item:hover::before{opacity:1}
+.nav-item.active{color:var(--text);background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(255,23,68,.1));border:1px solid rgba(124,58,237,.2)}
+.nav-item.active .nav-icon{color:var(--red);filter:drop-shadow(0 0 6px var(--redglow))}
+.nav-icon{width:18px;height:18px;flex-shrink:0;transition:all .22s}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-family:var(--font-mono);font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;min-width:18px;text-align:center}
+.nav-badge.green{background:var(--green)}
+.nav-badge.cyan{background:var(--cyan);color:#000}
+
+/* Connected platforms chips */
+.platform-chips{margin:8px 12px 0;padding:0 0 20px;position:relative;z-index:2}
+.platform-chip{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;border-radius:8px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  margin-bottom:6px;transition:all .2s;cursor:none;
+}
+.platform-chip:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
+.platform-chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.platform-chip-name{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text)}
+.platform-chip-state{margin-left:auto;font-family:var(--font-mono);font-size:9px;letter-spacing:.06em}
+.platform-chip-state.live{color:var(--green)}
+.platform-chip-state.idle{color:var(--muted)}
+.platform-chip-state.off{color:rgba(255,255,255,.2)}
+.platform-chip-state.live,.plat-status-badge.live{display:inline-flex;align-items:center;gap:6px}
+.live-dot-inline{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;display:inline-block}
+
+/* Sidebar user */
+.sidebar-user{
+  margin-top:auto;padding:18px 16px;
+  border-top:1px solid rgba(255,255,255,.05);
+  display:flex;align-items:center;gap:12px;
+  position:relative;z-index:2;cursor:none;transition:background .2s;border-radius:0;
+}
+.sidebar-user:hover{background:rgba(255,255,255,.03)}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--red));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:15px;color:#fff;flex-shrink:0;box-shadow:0 0 16px rgba(124,58,237,.3)}
+.user-info .user-name{font-size:13px;font-weight:700;color:var(--text)}
+.user-info .user-plan{font-family:var(--font-mono);font-size:10px;color:var(--violet2);margin-top:2px}
+.user-chevron{margin-left:auto;color:var(--muted);width:14px;height:14px}
+
+/* ═══════════════════════════════
+   MAIN CONTENT
+══════════════════════════════════ */
+.main{
+  margin-left:var(--sidebar-w);
+  flex:1;display:flex;flex-direction:column;
+  min-height:100vh;position:relative;z-index:10;
+  overflow-y:auto;
+}
+
+/* Top bar */
+.topbar{
+  position:sticky;top:0;
+  padding:0 36px;height:64px;
+  display:flex;align-items:center;gap:20px;
+  background:rgba(2,2,8,.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.04);
+  z-index:50;
+}
+.topbar-title{font-family:var(--font-display);font-size:28px;letter-spacing:2px;color:#fff}
+.topbar-breadcrumb{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.08em;margin-left:4px;margin-top:2px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+
+.topbar-btn{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 16px;border-radius:7px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03);color:var(--muted);
+  font-family:var(--font-body);font-size:12px;font-weight:600;
+  cursor:none;transition:all .2s;letter-spacing:.03em;
+}
+.topbar-btn:hover{background:rgba(255,255,255,.07);color:var(--text)}
+.topbar-btn.primary{background:linear-gradient(135deg,var(--red),#c2185b);color:#fff;border-color:transparent;box-shadow:0 4px 20px var(--redglow)}
+.topbar-btn.primary:hover{box-shadow:0 4px 36px rgba(255,23,68,.6);transform:translateY(-1px)}
+
+.notif-btn{
+  width:36px;height:36px;border-radius:8px;
+  border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);
+  display:flex;align-items:center;justify-content:center;
+  cursor:none;transition:all .2s;position:relative;
+}
+.notif-btn:hover{background:rgba(255,255,255,.07)}
+.notif-pip{position:absolute;top:6px;right:6px;width:6px;height:6px;background:var(--red);border-radius:50%;box-shadow:0 0 8px var(--redglow)}
+
+/* Page content */
+.page{display:none;padding:32px 36px 60px;animation:fadeIn .35s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── SECTION HEADER ─── */
+.section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.section-hd h2{font-family:var(--font-display);font-size:22px;letter-spacing:1.5px;color:#fff}
+.section-hd p{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.06em}
+
+/* ─── STATS GRID ─── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{
+  background:rgba(10,10,24,.7);border:1px solid rgba(255,255,255,.06);
+  border-radius:14px;padding:22px 22px 18px;
+  backdrop-filter:blur(16px);position:relative;overflow:hidden;
+  transition:border-color .25s,transform .25s;cursor:none;
+}
+.stat-card:hover{border-color:rgba(124,58,237,.3);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;filter:blur(40px);opacity:.3}
+.stat-card.r::before{background:var(--red)}
+.stat-card.v::before{background:var(--violet)}
+.stat-card.c::before{background:var(--cyan)}
+.stat-card.g::before{background:var(--green)}
+.stat-card-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.stat-card-val{font-family:var(--font-display);font-size:44px;line-height:1;letter-spacing:1px;margin-bottom:6px}
+.stat-card-val.r{color:var(--red);text-shadow:0 0 20px var(--redglow)}
+.stat-card-val.v{color:var(--violet2);text-shadow:0 0 20px rgba(168,85,247,.3)}
+.stat-card-val.c{color:var(--cyan);text-shadow:0 0 20px rgba(6,182,212,.3)}
+.stat-card-val.g{color:var(--green);text-shadow:0 0 20px rgba(16,185,129,.3)}
+.stat-card-sub{font-family:var(--font-mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.stat-delta{color:var(--green);font-size:10px}
+.stat-delta.neg{color:var(--red)}
+
+/* ─── GRID 2-COL ─── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px}
+.col-span-2{grid-column:span 2}
+
+/* ─── CARD ─── */
+.card{
+  background:rgba(10,10,24,.7);border:1px solid rgba(255,255,255,.06);
+  border-radius:16px;padding:24px;
+  backdrop-filter:blur(16px);position:relative;overflow:hidden;
+}
+.card-title{font-family:var(--font-display);font-size:18px;letter-spacing:1.5px;color:#fff;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.card-sub{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.06em;margin-bottom:18px}
+
+/* ─── CHART WRAPPER ─── */
+.chart-wrap{position:relative;height:160px;margin-top:12px}
+.chart-wrap canvas{width:100%;height:100%;display:block}
+.chart-labels{display:flex;justify-content:space-between;margin-top:8px}
+.chart-label{font-family:var(--font-mono);font-size:9px;color:var(--muted)}
+
+/* ─── LIVE STREAM STATUS ─── */
+.live-status-bar{
+  display:flex;align-items:center;gap:14px;
+  background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.2);
+  border-radius:12px;padding:14px 20px;margin-bottom:24px;
+}
+.live-badge{
+  display:flex;align-items:center;gap:7px;
+  background:var(--red);border-radius:6px;
+  padding:5px 14px;font-family:var(--font-mono);font-size:11px;font-weight:600;
+  letter-spacing:.12em;box-shadow:0 0 16px var(--redglow);flex-shrink:0;
+}
+.live-badge-dot{width:5px;height:5px;background:#fff;border-radius:50%;animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.live-info{flex:1;display:flex;gap:24px}
+.live-info-item{display:flex;flex-direction:column;gap:3px}
+.live-info-val{font-family:var(--font-display);font-size:22px;letter-spacing:.5px}
+.live-info-lbl{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.live-platforms{display:flex;gap:8px;margin-left:auto;align-items:center}
+.live-platform-dot{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.1);
+  font-family:var(--font-mono);font-size:10px;font-weight:600;
+}
+.live-platform-dot .dot{width:6px;height:6px;border-radius:50%}
+
+/* ─── PLATFORMS PAGE ─── */
+.platforms-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:28px}
+.platform-card{
+  background:rgba(10,10,24,.7);border:1px solid rgba(255,255,255,.06);
+  border-radius:16px;padding:26px;
+  transition:all .25s;cursor:none;position:relative;overflow:hidden;
+}
+.platform-card:hover{transform:translateY(-3px)}
+.platform-card.connected{border-color:rgba(16,185,129,.2)}
+.platform-card.connected:hover{border-color:rgba(16,185,129,.4);box-shadow:0 12px 40px rgba(16,185,129,.08)}
+.platform-card.disconnected:hover{border-color:rgba(124,58,237,.3);box-shadow:0 12px 40px rgba(124,58,237,.08)}
+.platform-card::before{content:'';position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;filter:blur(40px);opacity:.15}
+.platform-card.yt::before{background:#ff0000}
+.platform-card.tw::before{background:#9146ff}
+.platform-card.fb::before{background:#1877f2}
+.platform-card.tk::before{background:#fe2c55}
+.platform-card.kick::before{background:#53fc18}
+.platform-card.x::before{background:#fff}
+
+.plat-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+.plat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.plat-status-badge{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;
+  padding:4px 10px;border-radius:20px;font-weight:600;
+}
+.plat-status-badge.connected{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.plat-status-badge.disconnected{background:rgba(255,255,255,.05);color:var(--muted);border:1px solid rgba(255,255,255,.08)}
+.plat-status-badge.live{background:rgba(255,23,68,.12);color:var(--red);border:1px solid rgba(255,23,68,.25);animation:pulseBorder 2s ease-in-out infinite}
+@keyframes pulseBorder{0%,100%{box-shadow:0 0 0 0 rgba(255,23,68,.3)}50%{box-shadow:0 0 0 4px rgba(255,23,68,0)}}
+
+.plat-name{font-family:var(--font-display);font-size:22px;letter-spacing:1px;margin-bottom:4px}
+.plat-handle{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.plat-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.plat-stat{background:rgba(255,255,255,.03);border-radius:8px;padding:10px 12px}
+.plat-stat-val{font-family:var(--font-display);font-size:20px;letter-spacing:.5px}
+.plat-stat-lbl{font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.06em}
+.plat-btn{
+  width:100%;padding:10px;border-radius:9px;border:none;
+  font-family:var(--font-body);font-weight:700;font-size:12px;letter-spacing:.04em;
+  cursor:none;transition:all .22s;
+}
+.plat-btn.disconnect{background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.2)}
+.plat-btn.disconnect:hover{background:rgba(255,23,68,.2)}
+.plat-btn.connect{background:linear-gradient(135deg,var(--violet),var(--violet2));color:#fff;box-shadow:0 4px 16px rgba(124,58,237,.3)}
+.plat-btn.connect:hover{box-shadow:0 4px 30px rgba(124,58,237,.5);transform:translateY(-1px)}
+
+/* ─── STREAM KEY PAGE ─── */
+.key-card{
+  background:rgba(10,10,24,.8);border:1px solid rgba(255,255,255,.06);
+  border-radius:16px;padding:28px;margin-bottom:20px;
+}
+.key-platform-row{
+  display:flex;align-items:center;gap:14px;
+  padding:16px 18px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);
+  margin-bottom:12px;transition:all .2s;
+}
+.key-platform-row:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+.key-plat-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.key-plat-name{font-weight:700;font-size:14px;color:var(--text)}
+.key-plat-url{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px}
+.key-field{flex:1;margin:0 14px}
+.key-input{
+  width:100%;padding:9px 14px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;color:var(--text);
+  font-family:var(--font-mono);font-size:11px;outline:none;
+  transition:all .2s;letter-spacing:.04em;
+}
+.key-input:focus{border-color:rgba(124,58,237,.5);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.key-actions{display:flex;gap:8px;align-items:center}
+.key-btn{
+  padding:8px 14px;border-radius:7px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);color:var(--muted);
+  font-family:var(--font-mono);font-size:10px;font-weight:500;
+  cursor:none;transition:all .2s;white-space:nowrap;
+}
+.key-btn:hover{background:rgba(255,255,255,.09);color:var(--text)}
+.key-btn.copy{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.25);color:var(--violet2)}
+.key-btn.copy:hover{background:rgba(124,58,237,.22)}
+.key-btn.regen{background:rgba(255,23,68,.1);border-color:rgba(255,23,68,.2);color:var(--red)}
+.key-toggle{width:24px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;cursor:none;color:var(--muted);flex-shrink:0;transition:all .2s}
+.key-toggle:hover{color:var(--text);background:rgba(255,255,255,.08)}
+
+/* Server URL section */
+.server-section{margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.05)}
+.server-row{display:flex;gap:10px;margin-top:12px}
+.server-input{flex:1;padding:11px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:9px;color:var(--text);font-family:var(--font-mono);font-size:12px;outline:none;transition:all .2s}
+.server-input:focus{border-color:rgba(124,58,237,.4);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+
+/* ─── PREVIOUS STREAMS ─── */
+.streams-table-wrap{
+  background:rgba(10,10,24,.7);border:1px solid rgba(255,255,255,.06);
+  border-radius:16px;overflow:hidden;margin-bottom:20px;
+}
+.table-head{
+  display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;
+  padding:12px 22px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  background:rgba(255,255,255,.02);
+}
+.table-head-cell{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.table-row{
+  display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;
+  padding:15px 22px;border-bottom:1px solid rgba(255,255,255,.03);
+  align-items:center;transition:background .2s;cursor:none;
+}
+.table-row:last-child{border-bottom:none}
+.table-row:hover{background:rgba(255,255,255,.03)}
+.table-cell{font-size:13px;color:var(--text)}
+.table-cell.mono{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.table-cell.title{font-weight:700;display:flex;align-items:center;gap:10px}
+.stream-thumb{width:40px;height:24px;border-radius:4px;background:var(--dim);flex-shrink:0;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:10px;overflow:hidden}
+.platform-pills{display:flex;gap:4px;flex-wrap:wrap}
+.ppill{
+  font-family:var(--font-mono);font-size:8px;font-weight:600;
+  padding:2px 7px;border-radius:4px;letter-spacing:.06em;
+}
+.ppill.yt{background:rgba(255,0,0,.15);color:#ff4444;border:1px solid rgba(255,0,0,.2)}
+.ppill.tw{background:rgba(145,70,255,.15);color:#a855f7;border:1px solid rgba(145,70,255,.2)}
+.ppill.fb{background:rgba(24,119,242,.15);color:#60a5fa;border:1px solid rgba(24,119,242,.2)}
+.ppill.kick{background:rgba(83,252,24,.1);color:#53fc18;border:1px solid rgba(83,252,24,.2)}
+.rating{display:flex;gap:2px}
+.star{color:var(--gold);font-size:10px}
+.star.off{color:var(--dim)}
+.action-link{font-family:var(--font-mono);font-size:10px;color:var(--violet2);transition:color .2s}
+.action-link:hover{color:var(--violet2)}
+
+/* ─── SETTINGS ─── */
+.settings-grid{display:grid;grid-template-columns:240px 1fr;gap:24px}
+.settings-nav{
+  background:rgba(10,10,24,.7);border:1px solid rgba(255,255,255,.06);
+  border-radius:16px;padding:16px;height:fit-content;
+}
+.settings-nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-radius:9px;
+  font-size:13px;font-weight:600;color:var(--muted);
+  cursor:none;transition:all .2s;margin-bottom:3px;
+}
+.settings-nav-item:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.settings-nav-item.active{background:rgba(124,58,237,.15);color:var(--text);border:1px solid rgba(124,58,237,.2)}
+.settings-nav-icon{width:16px;height:16px;flex-shrink:0}
+.settings-content{display:flex;flex-direction:column;gap:18px}
+.settings-card{
+  background:rgba(10,10,24,.7);border:1px solid rgba(255,255,255,.06);
+  border-radius:16px;padding:26px;
+}
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.settings-row:last-child{border-bottom:none;padding-bottom:0}
+.settings-row-info .row-label{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.settings-row-info .row-desc{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.04em}
+.toggle{
+  width:44px;height:24px;border-radius:12px;
+  background:var(--dim);border:none;cursor:none;
+  position:relative;transition:background .25s;flex-shrink:0;
+}
+.toggle.on{background:linear-gradient(135deg,var(--violet),var(--violet2))}
+.toggle::after{
+  content:'';position:absolute;
+  width:18px;height:18px;border-radius:50%;
+  background:#fff;top:3px;left:3px;
+  transition:transform .25s;box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.toggle.on::after{transform:translateX(20px)}
+.settings-select{
+  padding:9px 14px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);border-radius:8px;
+  color:var(--text);font-family:var(--font-mono);font-size:11px;
+  outline:none;cursor:none;min-width:140px;
+  -webkit-appearance:none;
+}
+.settings-select:focus{border-color:rgba(124,58,237,.5)}
+.settings-input{
+  padding:9px 14px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);border-radius:8px;
+  color:var(--text);font-family:var(--font-mono);font-size:11px;
+  outline:none;min-width:200px;transition:all .2s;
+}
+.settings-input:focus{border-color:rgba(124,58,237,.5);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.quality-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px}
+.quality-opt{
+  padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.03);text-align:center;
+  cursor:none;transition:all .2s;
+}
+.quality-opt:hover{border-color:rgba(124,58,237,.3)}
+.quality-opt.selected{border-color:rgba(124,58,237,.5);background:rgba(124,58,237,.12)}
+.quality-opt-val{font-family:var(--font-display);font-size:18px;color:var(--text);margin-bottom:2px}
+.quality-opt-lbl{font-family:var(--font-mono);font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+/* ─── Danger Zone ─── */
+.danger-card{border-color:rgba(255,23,68,.15)!important}
+.danger-card .card-title{color:var(--red)}
+.btn-danger{padding:10px 20px;background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.25);color:var(--red);border-radius:8px;font-family:var(--font-body);font-weight:700;font-size:13px;cursor:none;transition:all .2s}
+.btn-danger:hover{background:rgba(255,23,68,.2)}
+
+/* ─── Small helpers ─── */
+.tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;padding:3px 10px;border-radius:20px;font-weight:600}
+.tag.live{background:rgba(255,23,68,.12);color:var(--red);border:1px solid rgba(255,23,68,.2)}
+.tag.offline{background:rgba(255,255,255,.05);color:var(--muted);border:1px solid rgba(255,255,255,.07)}
+.tag.vod{background:rgba(6,182,212,.1);color:var(--cyan);border:1px solid rgba(6,182,212,.2)}
+
+.divider{height:1px;background:rgba(255,255,255,.05);margin:20px 0}
+
+/* ─── Activity feed ─── */
+.feed-item{display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.feed-item:last-child{border-bottom:none}
+.feed-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.feed-icon svg{width:16px;height:16px}
+.feed-body .feed-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.feed-body .feed-sub{font-family:var(--font-mono);font-size:10px;color:var(--muted)}
+.feed-time{margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--muted);white-space:nowrap}
+
+/* ─── Progress bar ─── */
+.progress-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.progress-fill.r{background:linear-gradient(90deg,var(--red),var(--violet2))}
+.progress-fill.g{background:var(--green)}
+.progress-fill.c{background:var(--cyan)}
+
+/* ─── Tooltip ─── */
+[data-tip]{position:relative}
+[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:rgba(10,10,24,.98);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:6px 10px;font-family:var(--font-mono);font-size:10px;color:var(--text);white-space:nowrap;z-index:200;pointer-events:none}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(124,58,237,.25);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(124,58,237,.45)}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur-ring"></div>
+<canvas id="bg-canvas"></canvas>
+<div class="scanlines"></div>
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside class="sidebar">
+  <a class="sidebar-logo" href="index.html" aria-label="Second Chat home">
+    <img class="sidebar-logo-wordmark" src="assets/logo.png" alt="Second Chat logo">
+  </a>
+
+  <div class="sidebar-status">
+    <div class="status-dot"></div>
+    <span class="status-text">LIVE NOW</span>
+    <span class="status-count" id="live-viewer-count">24.3K</span>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('platforms',this)">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Connected Platforms
+      <span class="nav-badge green">3</span>
+    </div>
+    <div class="nav-item" onclick="showPage('streamkey',this)">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      Stream Keys
+    </div>
+    <div class="nav-item" onclick="showPage('previous',this)">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      Previous Streams
+      <span class="nav-badge cyan">18</span>
+    </div>
+    <div class="nav-item" onclick="showPage('settings',this)">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+  </div>
+
+  <div class="nav-section" style="margin-top:16px">
+    <div class="nav-section-label">Active Platforms</div>
+    <div class="platform-chips">
+      <div class="platform-chip">
+        <div class="platform-chip-dot" style="background:#ff0000"></div>
+        <span class="platform-chip-name">YouTube</span>
+        <span class="platform-chip-state live"><span class="live-dot-inline"></span>LIVE</span>
+      </div>
+      <div class="platform-chip">
+        <div class="platform-chip-dot" style="background:#9146ff"></div>
+        <span class="platform-chip-name">Twitch</span>
+        <span class="platform-chip-state live"><span class="live-dot-inline"></span>LIVE</span>
+      </div>
+      <div class="platform-chip">
+        <div class="platform-chip-dot" style="background:#1877f2"></div>
+        <span class="platform-chip-name">Facebook</span>
+        <span class="platform-chip-state idle">Idle</span>
+      </div>
+      <div class="platform-chip">
+        <div class="platform-chip-dot" style="background:#53fc18"></div>
+        <span class="platform-chip-name">Kick</span>
+        <span class="platform-chip-state live"><span class="live-dot-inline"></span>LIVE</span>
+      </div>
+      <div class="platform-chip">
+        <div class="platform-chip-dot" style="background:#fe2c55"></div>
+        <span class="platform-chip-name">TikTok</span>
+        <span class="platform-chip-state off">Not Connected</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">R</div>
+    <div class="user-info">
+      <div class="user-name">nova_plays</div>
+      <div class="user-plan">PRO PLAN</div>
+    </div>
+    <svg class="user-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>
+</aside>
+
+<!-- ═══════ MAIN ═══════ -->
+<main class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">DASHBOARD</div>
+      <div class="topbar-breadcrumb">Second Chat / <span id="topbar-crumb">Overview</span></div>
+    </div>
+    <div class="topbar-right">
+      <button class="topbar-btn" onclick="showPage('streamkey', document.querySelector('[onclick*=streamkey]'))">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        Stream Key
+      </button>
+      <div class="notif-btn">
+        <div class="notif-pip"></div>
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <button class="topbar-btn primary" onclick="goLive()">
+        <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="white"/></svg>
+        GO LIVE
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════
+       PAGE: DASHBOARD
+  ════════════════════════ -->
+  <div id="page-dashboard" class="page active">
+
+    <!-- Live Status Bar -->
+    <div class="live-status-bar" style="margin-top:32px;margin-left:36px;margin-right:36px">
+      <div class="live-badge"><div class="live-badge-dot"></div> LIVE</div>
+      <div class="live-info">
+        <div class="live-info-item">
+          <div class="live-info-val" style="color:var(--red)" id="dash-viewers">24.3K</div>
+          <div class="live-info-lbl">Viewers</div>
+        </div>
+        <div class="live-info-item">
+          <div class="live-info-val" style="color:var(--cyan)">2:14:37</div>
+          <div class="live-info-lbl">Duration</div>
+        </div>
+        <div class="live-info-item">
+          <div class="live-info-val" style="color:var(--green)">6,000</div>
+          <div class="live-info-lbl">Bitrate kbps</div>
+        </div>
+        <div class="live-info-item">
+          <div class="live-info-val" style="color:var(--gold)">1080p60</div>
+          <div class="live-info-lbl">Quality</div>
+        </div>
+      </div>
+      <div class="live-platforms">
+        <div class="live-platform-dot" style="border-color:rgba(255,0,0,.3)"><div class="dot" style="background:#ff0000"></div>YouTube</div>
+        <div class="live-platform-dot" style="border-color:rgba(145,70,255,.3)"><div class="dot" style="background:#9146ff"></div>Twitch</div>
+        <div class="live-platform-dot" style="border-color:rgba(83,252,24,.3)"><div class="dot" style="background:#53fc18"></div>Kick</div>
+      </div>
+    </div>
+
+    <div style="padding:0 36px">
+
+    <!-- Stats Row -->
+    <div class="stats-row" style="margin-top:24px">
+      <div class="stat-card r">
+        <div class="stat-card-label">Peak Viewers Today</div>
+        <div class="stat-card-val r">32.1K</div>
+        <div class="stat-card-sub"><span class="stat-delta">↑ 12.4%</span> vs last stream</div>
+      </div>
+      <div class="stat-card v">
+        <div class="stat-card-label">New Followers</div>
+        <div class="stat-card-val v">+847</div>
+        <div class="stat-card-sub"><span class="stat-delta">↑ 8.2%</span> this week</div>
+      </div>
+      <div class="stat-card c">
+        <div class="stat-card-label">Revenue (MTD)</div>
+        <div class="stat-card-val c">$2.4K</div>
+        <div class="stat-card-sub"><span class="stat-delta">↑ 31%</span> vs last month</div>
+      </div>
+      <div class="stat-card g">
+        <div class="stat-card-label">Avg Watch Time</div>
+        <div class="stat-card-val g">48m</div>
+        <div class="stat-card-sub"><span class="stat-delta neg">↓ 3.1%</span> vs avg</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid-2" style="margin-bottom:20px">
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Viewer Analytics
+        </div>
+        <div class="card-sub">Last 7 days — all platforms combined</div>
+        <div class="chart-wrap"><canvas id="viewerChart"></canvas></div>
+        <div class="chart-labels">
+          <span class="chart-label">Mon</span><span class="chart-label">Tue</span><span class="chart-label">Wed</span><span class="chart-label">Thu</span><span class="chart-label">Fri</span><span class="chart-label">Sat</span><span class="chart-label">Sun</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Platform Breakdown
+        </div>
+        <div class="card-sub">Viewer share by platform — live session</div>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+              <span style="font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#ff0000;display:inline-block"></span>YouTube</span>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">14.2K <span style="color:var(--text)">58%</span></span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill r" style="width:58%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+              <span style="font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#9146ff;display:inline-block"></span>Twitch</span>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">7.1K <span style="color:var(--text)">29%</span></span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:29%;background:var(--violet2)"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+              <span style="font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#53fc18;display:inline-block"></span>Kick</span>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">3.0K <span style="color:var(--text)">13%</span></span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill g" style="width:13%"></div></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="card-sub">Stream Health</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
+          <div style="text-align:center">
+            <div style="font-family:var(--font-display);font-size:28px;color:var(--green)">99.8<span style="font-size:14px">%</span></div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Uptime</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-family:var(--font-display);font-size:28px;color:var(--cyan)">8<span style="font-size:14px">ms</span></div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Latency</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-family:var(--font-display);font-size:28px;color:var(--gold)">0.2<span style="font-size:14px">%</span></div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Drop Rate</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity + Quick Actions -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Recent Activity</div>
+        <div class="card-sub">Live events from your stream</div>
+        <div class="feed-item">
+          <div class="feed-icon" style="background:rgba(255,23,68,.12)">🎯</div>
+          <div class="feed-body">
+            <div class="feed-title">New milestone — 30K viewers</div>
+            <div class="feed-sub">Peak reached on YouTube</div>
+          </div>
+          <div class="feed-time">2m ago</div>
+        </div>
+        <div class="feed-item">
+          <div class="feed-icon" style="background:rgba(16,185,129,.1)">💚</div>
+          <div class="feed-body">
+            <div class="feed-title">xgamer99 subscribed</div>
+            <div class="feed-sub">Twitch — 6-month streak</div>
+          </div>
+          <div class="feed-time">4m ago</div>
+        </div>
+        <div class="feed-item">
+          <div class="feed-icon" style="background:rgba(245,158,11,.1)">💰</div>
+          <div class="feed-body">
+            <div class="feed-title">nova_fan donated $20</div>
+            <div class="feed-sub">YouTube Super Chat</div>
+          </div>
+          <div class="feed-time">8m ago</div>
+        </div>
+        <div class="feed-item">
+          <div class="feed-icon" style="background:rgba(124,58,237,.12)">🔗</div>
+          <div class="feed-body">
+            <div class="feed-title">Kick stream connected</div>
+            <div class="feed-sub">Secondary output active</div>
+          </div>
+          <div class="feed-time">14m ago</div>
+        </div>
+        <div class="feed-item">
+          <div class="feed-icon" style="background:rgba(6,182,212,.1)">📡</div>
+          <div class="feed-body">
+            <div class="feed-title">Stream started</div>
+            <div class="feed-sub">Multi-platform broadcast initiated</div>
+          </div>
+          <div class="feed-time">2h ago</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Quick Actions</div>
+        <div class="card-sub">Manage your stream fast</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+          <button class="topbar-btn primary" style="justify-content:center;padding:13px;font-size:14px;border-radius:10px" onclick="goLive()">
+            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="white"/></svg>
+            Start Stream Session
+          </button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <button class="topbar-btn" style="justify-content:center;padding:11px;border-radius:9px;flex-direction:column;gap:4px;height:auto" onclick="showPage('platforms',document.querySelector('[onclick*=platforms]'))">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--violet2)"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <span style="font-size:11px">Platforms</span>
+            </button>
+            <button class="topbar-btn" style="justify-content:center;padding:11px;border-radius:9px;flex-direction:column;gap:4px;height:auto" onclick="showPage('streamkey',document.querySelector('[onclick*=streamkey]'))">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--cyan)"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              <span style="font-size:11px">Stream Keys</span>
+            </button>
+            <button class="topbar-btn" style="justify-content:center;padding:11px;border-radius:9px;flex-direction:column;gap:4px;height:auto" onclick="showPage('previous',document.querySelector('[onclick*=previous]'))">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--gold)"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              <span style="font-size:11px">Past Streams</span>
+            </button>
+            <button class="topbar-btn" style="justify-content:center;padding:11px;border-radius:9px;flex-direction:column;gap:4px;height:auto" onclick="showPage('settings',document.querySelector('[onclick*=settings]'))">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--green)"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <span style="font-size:11px">Settings</span>
+            </button>
+          </div>
+          <div style="padding:14px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.15);border-radius:10px;display:flex;align-items:center;gap:12px">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--red);flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--red)">Bitrate Warning</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px">Twitch bitrate dropped to 4200 kbps</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- /padding -->
+  </div><!-- /page-dashboard -->
+
+
+  <!-- ═══════════════════════
+       PAGE: PLATFORMS
+  ════════════════════════ -->
+  <div id="page-platforms" class="page">
+    <div style="padding:32px 36px 0">
+      <div class="section-hd">
+        <div>
+          <h2>Connected Platforms</h2>
+          <p>Manage your streaming destinations and multi-cast targets</p>
+        </div>
+        <button class="topbar-btn primary">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Platform
+        </button>
+      </div>
+
+      <div class="platforms-grid">
+
+        <!-- YouTube -->
+        <div class="platform-card connected yt">
+          <div class="plat-header">
+            <div class="plat-icon" style="background:rgba(255,0,0,.15)">📺</div>
+            <span class="plat-status-badge live">● LIVE</span>
+          </div>
+          <div class="plat-name" style="color:#ff4444">YouTube</div>
+          <div class="plat-handle">@nova_plays_official</div>
+          <div class="plat-stats">
+            <div class="plat-stat"><div class="plat-stat-val" style="color:#ff4444">14.2K</div><div class="plat-stat-lbl">Viewers</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--gold)">2.1M</div><div class="plat-stat-lbl">Subscribers</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--cyan)">1080p</div><div class="plat-stat-lbl">Quality</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--green)">99.9%</div><div class="plat-stat-lbl">Uptime</div></div>
+          </div>
+          <button class="plat-btn disconnect">Disconnect Platform</button>
+        </div>
+
+        <!-- Twitch -->
+        <div class="platform-card connected tw">
+          <div class="plat-header">
+            <div class="plat-icon" style="background:rgba(145,70,255,.15)">🎮</div>
+            <span class="plat-status-badge live">● LIVE</span>
+          </div>
+          <div class="plat-name" style="color:#a855f7">Twitch</div>
+          <div class="plat-handle">nova_plays</div>
+          <div class="plat-stats">
+            <div class="plat-stat"><div class="plat-stat-val" style="color:#a855f7">7.1K</div><div class="plat-stat-lbl">Viewers</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--gold)">128K</div><div class="plat-stat-lbl">Followers</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--cyan)">720p</div><div class="plat-stat-lbl">Quality</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--red)">97.2%</div><div class="plat-stat-lbl">Uptime</div></div>
+          </div>
+          <button class="plat-btn disconnect">Disconnect Platform</button>
+        </div>
+
+        <!-- Kick -->
+        <div class="platform-card connected kick">
+          <div class="plat-header">
+            <div class="plat-icon" style="background:rgba(83,252,24,.1)">⚡</div>
+            <span class="plat-status-badge live">● LIVE</span>
+          </div>
+          <div class="plat-name" style="color:#53fc18">Kick</div>
+          <div class="plat-handle">nova_plays</div>
+          <div class="plat-stats">
+            <div class="plat-stat"><div class="plat-stat-val" style="color:#53fc18">3.0K</div><div class="plat-stat-lbl">Viewers</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--gold)">42K</div><div class="plat-stat-lbl">Followers</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--cyan)">1080p</div><div class="plat-stat-lbl">Quality</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--green)">100%</div><div class="plat-stat-lbl">Uptime</div></div>
+          </div>
+          <button class="plat-btn disconnect">Disconnect Platform</button>
+        </div>
+
+        <!-- Facebook -->
+        <div class="platform-card disconnected fb">
+          <div class="plat-header">
+            <div class="plat-icon" style="background:rgba(24,119,242,.15)">📘</div>
+            <span class="plat-status-badge connected">Connected</span>
+          </div>
+          <div class="plat-name" style="color:#60a5fa">Facebook</div>
+          <div class="plat-handle">Nova Plays Gaming</div>
+          <div class="plat-stats">
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--muted)">—</div><div class="plat-stat-lbl">Viewers</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--gold)">89K</div><div class="plat-stat-lbl">Page Likes</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--muted)">Idle</div><div class="plat-stat-lbl">Status</div></div>
+            <div class="plat-stat"><div class="plat-stat-val" style="color:var(--muted)">—</div><div class="plat-stat-lbl">Uptime</div></div>
+          </div>
+          <button class="plat-btn connect">Enable for Broadcast</button>
+        </div>
+
+        <!-- TikTok -->
+        <div class="platform-card disconnected tk">
+          <div class="plat-header">
+            <div class="plat-icon" style="background:rgba(254,44,85,.1)">🎵</div>
+            <span class="plat-status-badge disconnected">Not Connected</span>
+          </div>
+          <div class="plat-name" style="color:#fe2c55">TikTok</div>
+          <div class="plat-handle">Connect your account</div>
+          <div class="plat-stats">
+            <div class="plat-stat" style="grid-column:span 2"><div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.6">Link your TikTok account to broadcast live and reach millions of new viewers across the platform.</div></div>
+          </div>
+          <button class="plat-btn connect">Connect TikTok</button>
+        </div>
+
+        <!-- X / Twitter -->
+        <div class="platform-card disconnected x">
+          <div class="plat-header">
+            <div class="plat-icon" style="background:rgba(255,255,255,.08)">✕</div>
+            <span class="plat-status-badge disconnected">Not Connected</span>
+          </div>
+          <div class="plat-name" style="color:#fff">X (Twitter)</div>
+          <div class="plat-handle">Connect your account</div>
+          <div class="plat-stats">
+            <div class="plat-stat" style="grid-column:span 2"><div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.6">Go live directly on X and engage your Twitter followers with real-time streaming content.</div></div>
+          </div>
+          <button class="plat-btn connect">Connect X</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════
+       PAGE: STREAM KEYS
+  ════════════════════════ -->
+  <div id="page-streamkey" class="page">
+    <div style="padding:32px 36px 0">
+      <div class="section-hd">
+        <div>
+          <h2>Stream Keys</h2>
+          <p>Manage RTMP ingest keys and server URLs for each platform</p>
+        </div>
+        <button class="topbar-btn" style="border-color:rgba(255,23,68,.2);color:var(--red)">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3.06"/></svg>
+          Rotate All Keys
+        </button>
+      </div>
+
+      <div class="key-card">
+        <div class="card-title" style="margin-bottom:6px">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          Platform Stream Keys
+        </div>
+        <div class="card-sub">Keep these private. Never share your stream key publicly.</div>
+
+        <!-- YouTube -->
+        <div class="key-platform-row">
+          <div class="key-plat-icon" style="background:rgba(255,0,0,.12)">📺</div>
+          <div>
+            <div class="key-plat-name">YouTube Live</div>
+            <div class="key-plat-url">rtmp://a.rtmp.youtube.com/live2</div>
+          </div>
+          <div class="key-field">
+            <input type="password" class="key-input" id="yt-key" value="xxxx-xxxx-xxxx-xxxx-xxxx" readonly>
+          </div>
+          <div class="key-actions">
+            <button class="key-toggle" onclick="toggleKey('yt-key',this)" title="Show/hide key">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="key-btn copy" onclick="copyKey('yt-key',this)">Copy</button>
+            <button class="key-btn regen">Regenerate</button>
+          </div>
+        </div>
+
+        <!-- Twitch -->
+        <div class="key-platform-row">
+          <div class="key-plat-icon" style="background:rgba(145,70,255,.12)">🎮</div>
+          <div>
+            <div class="key-plat-name">Twitch</div>
+            <div class="key-plat-url">rtmp://live.twitch.tv/app</div>
+          </div>
+          <div class="key-field">
+            <input type="password" class="key-input" id="tw-key" value="live_123456789_AbCdEfGhIjKlMnOpQrStUvWxYz" readonly>
+          </div>
+          <div class="key-actions">
+            <button class="key-toggle" onclick="toggleKey('tw-key',this)">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="key-btn copy" onclick="copyKey('tw-key',this)">Copy</button>
+            <button class="key-btn regen">Regenerate</button>
+          </div>
+        </div>
+
+        <!-- Kick -->
+        <div class="key-platform-row">
+          <div class="key-plat-icon" style="background:rgba(83,252,24,.08)">⚡</div>
+          <div>
+            <div class="key-plat-name">Kick</div>
+            <div class="key-plat-url">rtmp://ingest.kick.com/live</div>
+          </div>
+          <div class="key-field">
+            <input type="password" class="key-input" id="kick-key" value="sk_kick_9f8g7h6j5k4l3m2n1" readonly>
+          </div>
+          <div class="key-actions">
+            <button class="key-toggle" onclick="toggleKey('kick-key',this)">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="key-btn copy" onclick="copyKey('kick-key',this)">Copy</button>
+            <button class="key-btn regen">Regenerate</button>
+          </div>
+        </div>
+
+        <!-- Facebook -->
+        <div class="key-platform-row" style="opacity:.55">
+          <div class="key-plat-icon" style="background:rgba(24,119,242,.12)">📘</div>
+          <div>
+            <div class="key-plat-name">Facebook Live <span style="font-family:var(--font-mono);font-size:9px;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:4px;color:var(--muted);margin-left:6px">IDLE</span></div>
+            <div class="key-plat-url">rtmps://live-api-s.facebook.com:443/rtmp</div>
+          </div>
+          <div class="key-field">
+            <input type="password" class="key-input" id="fb-key" value="fb-live-0123456789abcdef" readonly>
+          </div>
+          <div class="key-actions">
+            <button class="key-toggle" onclick="toggleKey('fb-key',this)">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="key-btn copy" onclick="copyKey('fb-key',this)">Copy</button>
+            <button class="key-btn regen">Regenerate</button>
+          </div>
+        </div>
+
+        <div class="server-section">
+          <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Second Chat Ingest URL (Master)</div>
+          <div style="font-size:12px;color:var(--text);margin-bottom:6px">Use this single URL in OBS/Streamlabs to broadcast to all connected platforms simultaneously.</div>
+          <div class="server-row">
+            <input type="text" class="server-input" value="rtmp://ingest.streamforge.io/live" readonly>
+            <button class="key-btn copy" style="padding:11px 20px" onclick="copyText('rtmp://ingest.streamforge.io/live',this)">Copy URL</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- OBS Setup Guide -->
+      <div class="card">
+        <div class="card-title">OBS / Streamlabs Setup</div>
+        <div class="card-sub">Quick configuration guide</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px">
+          <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:16px">
+            <div style="font-family:var(--font-display);font-size:32px;color:var(--violet2);margin-bottom:8px">01</div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px">Open OBS Settings</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.6">Go to Settings → Stream and set Service to "Custom"</div>
+          </div>
+          <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:16px">
+            <div style="font-family:var(--font-display);font-size:32px;color:var(--cyan);margin-bottom:8px">02</div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px">Enter Ingest URL</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.6">Paste the Second Chat master URL into the Server field</div>
+          </div>
+          <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:16px">
+            <div style="font-family:var(--font-display);font-size:32px;color:var(--green);margin-bottom:8px">03</div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px">Stream Key</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.6">Copy your personal stream key from above and paste it in OBS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════
+       PAGE: PREVIOUS STREAMS
+  ════════════════════════ -->
+  <div id="page-previous" class="page">
+    <div style="padding:32px 36px 0">
+      <div class="section-hd">
+        <div>
+          <h2>Previous Streams</h2>
+          <p>18 recorded sessions · 342 hours total</p>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="topbar-btn">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            Filter
+          </button>
+          <button class="topbar-btn">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="streams-table-wrap">
+        <div class="table-head">
+          <div class="table-head-cell">Stream Title</div>
+          <div class="table-head-cell">Platforms</div>
+          <div class="table-head-cell">Peak Viewers</div>
+          <div class="table-head-cell">Duration</div>
+          <div class="table-head-cell">Date</div>
+          <div class="table-head-cell">Actions</div>
+        </div>
+
+        <div class="table-row">
+          <div class="table-cell title">
+            <div class="stream-thumb" style="background:linear-gradient(135deg,#ff174420,#7c3aed20)">🎮</div>
+            <div>
+              <div>Pro Tournament Finals</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px">Championship — Solo Queue</div>
+            </div>
+          </div>
+          <div class="table-cell"><div class="platform-pills"><span class="ppill yt">YT</span><span class="ppill tw">TW</span><span class="ppill kick">KICK</span></div></div>
+          <div class="table-cell" style="font-family:var(--font-display);font-size:20px;color:var(--red)">32.1K</div>
+          <div class="table-cell mono">4h 22m</div>
+          <div class="table-cell mono">Apr 5, 2026</div>
+          <div class="table-cell"><span class="action-link">View →</span></div>
+        </div>
+
+        <div class="table-row">
+          <div class="table-cell title">
+            <div class="stream-thumb" style="background:linear-gradient(135deg,#a855f720,#06b6d420)">🏆</div>
+            <div>
+              <div>Ranked Grind — Diamond Push</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px">Ranked · Competitive</div>
+            </div>
+          </div>
+          <div class="table-cell"><div class="platform-pills"><span class="ppill yt">YT</span><span class="ppill tw">TW</span></div></div>
+          <div class="table-cell" style="font-family:var(--font-display);font-size:20px;color:var(--violet2)">18.7K</div>
+          <div class="table-cell mono">3h 10m</div>
+          <div class="table-cell mono">Apr 3, 2026</div>
+          <div class="table-cell"><span class="action-link">View →</span></div>
+        </div>
+
+        <div class="table-row">
+          <div class="table-cell title">
+            <div class="stream-thumb" style="background:linear-gradient(135deg,#10b98120,#06b6d420)">🎵</div>
+            <div>
+              <div>Chill Lofi & Gaming</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px">Relaxed · Just Chatting</div>
+            </div>
+          </div>
+          <div class="table-cell"><div class="platform-pills"><span class="ppill yt">YT</span><span class="ppill fb">FB</span><span class="ppill kick">KICK</span></div></div>
+          <div class="table-cell" style="font-family:var(--font-display);font-size:20px;color:var(--green)">9.2K</div>
+          <div class="table-cell mono">6h 44m</div>
+          <div class="table-cell mono">Apr 1, 2026</div>
+          <div class="table-cell"><span class="action-link">View →</span></div>
+        </div>
+
+        <div class="table-row">
+          <div class="table-cell title">
+            <div class="stream-thumb" style="background:linear-gradient(135deg,#f59e0b20,#ff174420)">⚡</div>
+            <div>
+              <div>New Game Launch Special</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px">Launch Event · Sponsored</div>
+            </div>
+          </div>
+          <div class="table-cell"><div class="platform-pills"><span class="ppill yt">YT</span><span class="ppill tw">TW</span><span class="ppill fb">FB</span><span class="ppill kick">KICK</span></div></div>
+          <div class="table-cell" style="font-family:var(--font-display);font-size:20px;color:var(--gold)">51.4K</div>
+          <div class="table-cell mono">5h 55m</div>
+          <div class="table-cell mono">Mar 28, 2026</div>
+          <div class="table-cell"><span class="action-link">View →</span></div>
+        </div>
+
+        <div class="table-row">
+          <div class="table-cell title">
+            <div class="stream-thumb" style="background:linear-gradient(135deg,#06b6d420,#7c3aed20)">💬</div>
+            <div>
+              <div>Community Q&A + Gameplay</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px">Just Chatting · Interactive</div>
+            </div>
+          </div>
+          <div class="table-cell"><div class="platform-pills"><span class="ppill yt">YT</span><span class="ppill tw">TW</span></div></div>
+          <div class="table-cell" style="font-family:var(--font-display);font-size:20px;color:var(--cyan)">12.3K</div>
+          <div class="table-cell mono">2h 38m</div>
+          <div class="table-cell mono">Mar 25, 2026</div>
+          <div class="table-cell"><span class="action-link">View →</span></div>
+        </div>
+
+        <div class="table-row">
+          <div class="table-cell title">
+            <div class="stream-thumb" style="background:linear-gradient(135deg,#ff174410,#a855f710)">🌙</div>
+            <div>
+              <div>Late Night Grinding Session</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px">Casual · Unranked</div>
+            </div>
+          </div>
+          <div class="table-cell"><div class="platform-pills"><span class="ppill tw">TW</span><span class="ppill kick">KICK</span></div></div>
+          <div class="table-cell" style="font-family:var(--font-display);font-size:20px;color:var(--muted)">6.8K</div>
+          <div class="table-cell mono">7h 12m</div>
+          <div class="table-cell mono">Mar 22, 2026</div>
+          <div class="table-cell"><span class="action-link">View →</span></div>
+        </div>
+
+      </div>
+
+      <!-- Pagination -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-bottom:40px">
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">Showing 6 of 18 streams</span>
+        <div style="display:flex;gap:6px">
+          <button class="key-btn" style="padding:8px 16px">← Prev</button>
+          <button class="key-btn" style="padding:8px 16px;background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.3);color:var(--violet2)">1</button>
+          <button class="key-btn" style="padding:8px 16px">2</button>
+          <button class="key-btn" style="padding:8px 16px">3</button>
+          <button class="key-btn" style="padding:8px 16px">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════
+       PAGE: SETTINGS
+  ════════════════════════ -->
+  <div id="page-settings" class="page">
+    <div style="padding:32px 36px 60px">
+      <div class="section-hd">
+        <div>
+          <h2>Settings</h2>
+          <p>Configure your Second Chat experience</p>
+        </div>
+        <button class="topbar-btn primary">Save Changes</button>
+      </div>
+
+      <div class="settings-grid">
+        <!-- Settings Nav -->
+        <div class="settings-nav">
+          <div class="settings-nav-item active">
+            <svg class="settings-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            General
+          </div>
+          <div class="settings-nav-item">
+            <svg class="settings-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            Stream Quality
+          </div>
+          <div class="settings-nav-item">
+            <svg class="settings-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            Chat & Alerts
+          </div>
+          <div class="settings-nav-item">
+            <svg class="settings-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+            Analytics
+          </div>
+          <div class="settings-nav-item">
+            <svg class="settings-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Security
+          </div>
+          <div class="settings-nav-item">
+            <svg class="settings-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile
+          </div>
+          <div class="settings-nav-item">
+            <svg class="settings-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span style="color:var(--red)">Danger Zone</span>
+          </div>
+        </div>
+
+        <!-- Settings Content -->
+        <div class="settings-content">
+
+          <!-- Profile -->
+          <div class="settings-card">
+            <div class="card-title" style="margin-bottom:4px">Profile</div>
+            <div class="card-sub">Your public streamer identity</div>
+            <div class="settings-row" style="margin-top:8px">
+              <div class="settings-row-info">
+                <div class="row-label">Display Name</div>
+                <div class="row-desc">Shown on all platform overlays</div>
+              </div>
+              <input class="settings-input" type="text" value="nova_plays">
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="row-label">Stream Title Template</div>
+                <div class="row-desc">Auto-fill for new sessions</div>
+              </div>
+              <input class="settings-input" type="text" value="🎮 {game} — Road to {rank}">
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="row-label">Time Zone</div>
+                <div class="row-desc">Used for scheduling & analytics</div>
+              </div>
+              <select class="settings-select">
+                <option>Asia/Kolkata (IST)</option>
+                <option>UTC</option>
+                <option>America/New_York</option>
+                <option>America/Los_Angeles</option>
+                <option>Europe/London</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Stream Quality -->
+          <div class="settings-card">
+            <div class="card-title" style="margin-bottom:4px">Stream Quality</div>
+            <div class="card-sub">Output resolution and encoding settings</div>
+
+            <div style="margin-top:12px;margin-bottom:6px;font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Output Resolution</div>
+            <div class="quality-grid">
+              <div class="quality-opt"><div class="quality-opt-val">720p</div><div class="quality-opt-lbl">30fps</div></div>
+              <div class="quality-opt selected"><div class="quality-opt-val" style="color:var(--violet2)">1080p</div><div class="quality-opt-lbl">60fps</div></div>
+              <div class="quality-opt"><div class="quality-opt-val">1440p</div><div class="quality-opt-lbl">60fps</div></div>
+              <div class="quality-opt"><div class="quality-opt-val">4K</div><div class="quality-opt-lbl">30fps</div></div>
+            </div>
+
+            <div class="settings-row" style="margin-top:16px">
+              <div class="settings-row-info">
+                <div class="row-label">Video Bitrate</div>
+                <div class="row-desc">Target kbps for video encoding</div>
+              </div>
+              <input class="settings-input" type="text" value="6000 kbps" style="min-width:130px">
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="row-label">Audio Bitrate</div>
+                <div class="row-desc">AAC stereo encoding</div>
+              </div>
+              <select class="settings-select">
+                <option>320 kbps</option>
+                <option>256 kbps</option>
+                <option>192 kbps</option>
+                <option>128 kbps</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="row-label">Encoder</div>
+                <div class="row-desc">Hardware or software encoding</div>
+              </div>
+              <select class="settings-select">
+                <option>NVIDIA NVENC (H.264)</option>
+                <option>AMD VCE</option>
+                <option>Software x264</option>
+                <option>Apple VideoToolbox</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Notifications & Alerts -->
+          <div class="settings-card">
+            <div class="card-title" style="margin-bottom:4px">Notifications & Alerts</div>
+            <div class="card-sub">Configure stream event notifications</div>
+            <div class="settings-row" style="margin-top:8px">
+              <div class="settings-row-info">
+                <div class="row-label">Viewer milestone alerts</div>
+                <div class="row-desc">Notify at 1K, 5K, 10K, 25K thresholds</div>
+              </div>
+              <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="row-label">New follower notifications</div>
+                <div class="row-desc">Real-time overlay alerts</div>
+              </div>
+              <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="row-label">Bitrate drop warnings</div>
+                <div class="row-desc">Alert when bitrate falls below threshold</div>
+              </div>
+              <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="row-label">Donation sound alerts</div>
+                <div class="row-desc">Play audio on super chats & donations</div>
+              </div>
+              <button class="toggle" onclick="this.classList.toggle('on')"></button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="row-label">Auto-record streams</div>
+                <div class="row-desc">Save local copy of every broadcast</div>
+              </div>
+              <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+            </div>
+          </div>
+
+          <!-- Danger Zone -->
+          <div class="settings-card danger-card">
+            <div class="card-title">Danger Zone</div>
+            <div class="card-sub" style="margin-bottom:16px">These actions are irreversible. Proceed with caution.</div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="row-label">Revoke All Stream Keys</div>
+                <div class="row-desc">Immediately invalidates all active platform keys</div>
+              </div>
+              <button class="btn-danger">Revoke Keys</button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="row-label">Delete Stream History</div>
+                <div class="row-desc">Permanently remove all past stream records</div>
+              </div>
+              <button class="btn-danger">Delete History</button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="row-label">Delete Account</div>
+                <div class="row-desc">Permanently delete your Second Chat account</div>
+              </div>
+              <button class="btn-danger" style="background:rgba(255,23,68,.2);border-color:rgba(255,23,68,.5)">Delete Account</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ─── CURSOR ─── */
+const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+document.addEventListener('mousemove',e=>{
+  cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px';
+  ring.style.left=e.clientX+'px';ring.style.top=e.clientY+'px';
+});
+
+/* ─── PAGE NAV ─── */
+const pageNames={
+  dashboard:{title:'DASHBOARD',crumb:'Overview'},
+  platforms:{title:'PLATFORMS',crumb:'Connected Platforms'},
+  streamkey:{title:'STREAM KEYS',crumb:'Key Management'},
+  previous:{title:'PREV. STREAMS',crumb:'Stream History'},
+  settings:{title:'SETTINGS',crumb:'Configuration'}
+};
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  const meta=pageNames[id]||{title:id.toUpperCase(),crumb:id};
+  document.getElementById('topbar-title').textContent=meta.title;
+  document.getElementById('topbar-crumb').textContent=meta.crumb;
+}
+
+function goLive(){
+  const target=document.querySelector('[onclick*=streamkey]');
+  if(target){
+    showPage('streamkey', target);
+  } else {
+    alert('Ready to go live — opening stream key settings.');
+  }
+}
+
+/* ─── STREAM KEY TOGGLE ─── */
+function toggleKey(id,btn){
+  const inp=document.getElementById(id);
+  inp.type=inp.type==='password'?'text':'password';
+  btn.style.color=inp.type==='text'?'var(--violet2)':'var(--muted)';
+}
+function copyKey(id,btn){
+  const inp=document.getElementById(id);
+  const t=inp.type;
+  inp.type='text';
+  navigator.clipboard.writeText(inp.value).catch(()=>{});
+  inp.type=t;
+  const orig=btn.textContent;btn.textContent='Copied!';btn.style.color='var(--green)';
+  setTimeout(()=>{btn.textContent=orig;btn.style.color='';},2000);
+}
+function copyText(text,btn){
+  navigator.clipboard.writeText(text).catch(()=>{});
+  const orig=btn.textContent;btn.textContent='Copied!';btn.style.color='var(--green)';
+  setTimeout(()=>{btn.textContent=orig;btn.style.color='';},2000);
+}
+
+/* ─── BG CANVAS ─── */
+(function(){
+  const canvas=document.getElementById('bg-canvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,particles=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;init();}
+  function init(){
+    particles=Array.from({length:60},()=>({
+      x:Math.random()*W,y:Math.random()*H,
+      vx:(Math.random()-.5)*.15,vy:(Math.random()-.5)*.15,
+      size:Math.random()*1.2+.2,
+      alpha:Math.random()*.25+.05,
+      color:['255,23,68','124,58,237','6,182,212','255,255,255'][Math.floor(Math.random()*4)]
+    }));
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach((p,i)=>{
+      particles.slice(i+1).forEach(q=>{
+        const dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<120){ctx.beginPath();ctx.strokeStyle=`rgba(124,58,237,${.04*(1-d/120)})`;ctx.lineWidth=.5;ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();}
+      });
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${p.color},${p.alpha})`;ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',resize);resize();
+  requestAnimationFrame(draw);
+})();
+
+/* ─── VIEWER CHART ─── */
+window.addEventListener('load',()=>{
+  const canvas=document.getElementById('viewerChart');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  function resize(){canvas.width=canvas.parentElement.clientWidth*2;canvas.height=canvas.parentElement.clientHeight*2;canvas.style.width='100%';canvas.style.height='100%';draw();}
+  function draw(){
+    const W=canvas.width,H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+    const data=[8200,12400,9800,16700,21300,18900,24300];
+    const max=Math.max(...data);
+    const pts=data.map((v,i)=>({x:W/(data.length-1)*i,y:H*0.9-v/max*(H*0.75)}));
+
+    // Grid lines
+    ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;
+    for(let i=0;i<5;i++){const y=H*0.9-i*(H*0.75/4);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+    // Area
+    const grad=ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'rgba(255,23,68,0.25)');grad.addColorStop(0.5,'rgba(124,58,237,0.1)');grad.addColorStop(1,'rgba(2,2,8,0)');
+    ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(pts[0].x,pts[0].y);
+    for(let i=1;i<pts.length-2;i++){const xc=(pts[i].x+pts[i+1].x)/2,yc=(pts[i].y+pts[i+1].y)/2;ctx.quadraticCurveTo(pts[i].x,pts[i].y,xc,yc);}
+    ctx.quadraticCurveTo(pts[pts.length-2].x,pts[pts.length-2].y,pts[pts.length-1].x,pts[pts.length-1].y);
+    ctx.lineTo(W,H);ctx.fillStyle=grad;ctx.fill();
+
+    // Line
+    ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+    for(let i=1;i<pts.length-2;i++){const xc=(pts[i].x+pts[i+1].x)/2,yc=(pts[i].y+pts[i+1].y)/2;ctx.quadraticCurveTo(pts[i].x,pts[i].y,xc,yc);}
+    ctx.quadraticCurveTo(pts[pts.length-2].x,pts[pts.length-2].y,pts[pts.length-1].x,pts[pts.length-1].y);
+    ctx.strokeStyle='rgba(255,23,68,0.8)';ctx.lineWidth=3;ctx.shadowColor='rgba(255,23,68,0.5)';ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0;
+
+    // Dots
+    pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fillStyle='#ff1744';ctx.shadowColor='rgba(255,23,68,0.8)';ctx.shadowBlur=8;ctx.fill();ctx.shadowBlur=0;});
+  }
+  new ResizeObserver(resize).observe(canvas.parentElement);resize();
+});
+
+/* ─── LIVE TICKER ─── */
+setInterval(()=>{
+  const n=(24+(Math.random()*.6-.3)).toFixed(1)+'K';
+  document.getElementById('live-viewer-count').textContent=n;
+  document.getElementById('dash-viewers').textContent=n;
+},4000);
+
+/* ─── STREAM DURATION TICKER ─── */
+let sec=2*3600+14*60+37;
+setInterval(()=>{
+  sec++;
+  const h=Math.floor(sec/3600);
+  const m=Math.floor((sec%3600)/60);
+  const s=sec%60;
+  const el=document.querySelector('.live-info-val[style*="cyan"]');
+  if(el)el.textContent=`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+},1000);
+</script>
+</body>
+</html>

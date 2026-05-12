@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Second Chat — The Streaming OS</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #020208;
+  --bg1: #050510;
+  --bg2: #080818;
+  --surface: #0c0c1e;
+  --surface2: #101028;
+  --red: #ff1744;
+  --redglow: rgba(255,23,68,0.35);
+  --violet: #7c3aed;
+  --violet2: #a855f7;
+  --cyan: #06b6d4;
+  --gold: #f59e0b;
+  --green: #10b981;
+  --text: #f1efff;
+  --muted: #64617a;
+  --dim: #242238;
+  --border: rgba(124,58,237,0.15);
+  --border2: rgba(255,23,68,0.2);
+  --glass: rgba(12,12,30,0.75);
+  --glass2: rgba(255,255,255,0.03);
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;cursor:auto!important}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);overflow-x:hidden}
+
+/* ─── CURSOR ─── */
+#cur,#cur-ring{display:none}
+#cur{position:fixed;width:10px;height:10px;background:var(--red);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference;transition:width .15s,height .15s}
+#cur-ring{position:fixed;width:38px;height:38px;border:1px solid rgba(255,23,68,.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .28s cubic-bezier(.23,1,.32,1)}
+body:has(a:hover) #cur,body:has(button:hover) #cur{width:20px;height:20px}
+body:has(a:hover) #cur-ring,body:has(button:hover) #cur-ring{width:56px;height:56px;border-color:rgba(124,58,237,.6)}
+
+/* ─── HERO CANVAS BG ─── */
+#hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+
+/* ─── NAV ─── */
+nav{position:fixed;top:0;left:0;right:0;z-index:800;padding:0 52px;height:68px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(2,2,8,.95),transparent);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.04)}
+.nav-logo{display:inline-flex;align-items:center;text-decoration:none}
+.nav-logo-wordmark{display:block;height:52px;width:auto;filter:drop-shadow(0 0 18px rgba(255,23,68,.18))}
+.nav-logo-icon{width:52px;height:52px;background-color:transparent;border-radius:12px;flex-shrink:0;box-shadow:0 0 24px var(--redglow),0 0 50px rgba(124,58,237,.3);position:relative;overflow:hidden}
+.nav-logo-icon img{width:100%;height:100%;object-fit:contain;display:block}
+.nav-links{display:flex;gap:36px;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;letter-spacing:.04em;transition:color .2s;position:relative}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--red);transition:width .3s}
+.nav-links a:hover{color:var(--text)}
+.nav-links a:hover::after{width:100%}
+.nav-right{display:flex;align-items:center;gap:14px}
+.nav-status{display:flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:10px;color:var(--green);border:1px solid rgba(16,185,129,.2);border-radius:20px;padding:5px 14px;background:rgba(16,185,129,.05)}
+.live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pdot 2s ease-in-out infinite}
+@keyframes pdot{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}50%{box-shadow:0 0 0 5px rgba(16,185,129,0)}}
+.btn-nav{background:linear-gradient(135deg,var(--red),#c2185b);color:#fff;border:none;padding:9px 22px;border-radius:7px;font-family:var(--font-body);font-weight:700;font-size:13px;cursor:none;transition:all .25s;box-shadow:0 4px 20px var(--redglow)}
+.btn-nav:hover{box-shadow:0 4px 40px rgba(255,23,68,.7);transform:translateY(-1px)}
+
+/* ─── HERO ─── */
+.hero{position:relative;min-height:100vh;overflow:hidden;padding:112px 0 40px}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(2,2,8,.5) 0%,rgba(2,2,8,.1) 40%,rgba(2,2,8,.7) 80%,rgba(2,2,8,1) 100%);z-index:1;pointer-events:none}
+
+/* Scanlines */
+.scanlines{position:absolute;inset:0;z-index:2;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.07) 3px,rgba(0,0,0,.07) 4px);animation:scanlineMove 8s linear infinite}
+@keyframes scanlineMove{0%{background-position:0 0}100%{background-position:0 100px}}
+
+/* Vignette */
+.vignette{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse 80% 80% at 50% 50%,transparent 40%,rgba(2,2,8,.85) 100%)}
+
+.hero-content{position:relative;z-index:10;width:100%;max-width:1260px;margin:0 auto;padding:0 60px;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+
+/* Tag pill */
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(255,23,68,.08);border:1px solid rgba(255,23,68,.3);border-radius:30px;padding:6px 16px;font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;color:var(--red);margin-bottom:26px;opacity:0;animation:slideUp .8s ease forwards .2s}
+.hero-tag-pulse{width:7px;height:7px;background:var(--red);border-radius:50%;animation:pdot 1.5s ease-in-out infinite}
+
+/* Headline */
+.hero-h1{font-family:var(--font-display);font-size:clamp(72px,9vw,120px);line-height:.9;letter-spacing:3px;margin-bottom:22px;opacity:0;animation:slideUp .9s ease forwards .4s}
+.hero-h1 .w1{display:block;color:rgba(255,255,255,.18)}
+.hero-h1 .w2{display:block;background:linear-gradient(135deg,var(--red) 0%,var(--violet2) 60%,var(--cyan) 100%);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 30px rgba(255,23,68,.4))}
+.hero-h1 .w3{display:block;color:#fff}
+
+.hero-p{font-size:15px;line-height:1.8;color:var(--muted);max-width:430px;margin-bottom:38px;opacity:0;animation:slideUp .9s ease forwards .6s}
+.hero-p strong{color:var(--text)}
+
+.platform-proof{display:flex;flex-direction:column;gap:14px;margin-bottom:34px;opacity:0;animation:slideUp .9s ease forwards .7s}
+.platform-proof-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.platform-proof-list{display:flex;flex-wrap:wrap;gap:12px}
+.platform-pill{display:inline-flex;align-items:center;gap:14px;padding:14px 18px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);backdrop-filter:blur(16px);box-shadow:0 18px 40px rgba(0,0,0,.18);min-width:164px}
+.platform-pill img{height:28px;width:auto;max-width:86px;object-fit:contain;display:block;flex-shrink:0}
+.platform-pill span{font-family:var(--font-display);font-size:24px;letter-spacing:1px;color:var(--text);text-transform:uppercase;line-height:1}
+.platform-pill.youtube{border-color:rgba(255,0,0,.2);background:rgba(255,0,0,.07)}
+.platform-pill.twitch{border-color:rgba(145,70,255,.24);background:rgba(145,70,255,.08)}
+.platform-pill.kick{border-color:rgba(83,252,24,.24);background:rgba(83,252,24,.08)}
+
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;opacity:0;animation:slideUp .9s ease forwards .8s}
+.btn-primary{display:flex;align-items:center;gap:9px;background:linear-gradient(135deg,var(--red),#c2185b);color:#fff;border:none;padding:14px 30px;border-radius:8px;font-family:var(--font-body);font-weight:700;font-size:14px;cursor:none;transition:all .28s;box-shadow:0 8px 30px var(--redglow),inset 0 1px 0 rgba(255,255,255,.15);letter-spacing:.03em}
+.btn-primary:hover{box-shadow:0 12px 50px rgba(255,23,68,.6);transform:translateY(-2px)}
+.btn-primary svg{animation:pulsePlay 2s ease-in-out infinite}
+@keyframes pulsePlay{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+.btn-secondary{display:flex;align-items:center;gap:9px;background:transparent;color:var(--text);border:1px solid rgba(255,255,255,.1);padding:13px 26px;border-radius:8px;font-family:var(--font-body);font-weight:600;font-size:14px;cursor:none;transition:all .25s;backdrop-filter:blur(8px);letter-spacing:.02em}
+.btn-secondary:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.25)}
+
+/* Stats */
+.hero-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:50px;border:1px solid var(--border);border-radius:12px;background:rgba(12,12,30,.6);backdrop-filter:blur(20px);overflow:hidden;opacity:0;animation:slideUp .9s ease forwards 1s}
+.stat{padding:22px 26px;position:relative}
+.stat+.stat::before{content:'';position:absolute;left:0;top:20%;height:60%;width:1px;background:var(--border)}
+.stat-n{font-family:var(--font-display);font-size:42px;letter-spacing:1px;line-height:1;color:#fff}
+.stat-n.compact{font-size:34px}
+.stat-n .unit{font-size:22px;color:var(--muted)}
+.stat-l{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-top:4px}
+
+/* ─── HERO RIGHT: LIVE CARD ─── */
+.hero-right{opacity:0;animation:slideUp .9s ease forwards .5s;position:relative}
+.stream-card{background:rgba(10,10,24,.85);border:1px solid rgba(255,255,255,.08);border-radius:20px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04),0 0 80px rgba(124,58,237,.1);backdrop-filter:blur(24px);position:relative}
+
+/* Stream screen with canvas */
+.stream-screen{position:relative;aspect-ratio:16/9;background:#000;overflow:hidden}
+#stream-canvas{width:100%;height:100%;display:block}
+
+.stream-hud{position:absolute;inset:0;pointer-events:none}
+.hud-top{position:absolute;top:12px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between}
+.hud-live{display:flex;align-items:center;gap:6px;background:var(--red);border-radius:4px;padding:4px 12px;font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.12em;box-shadow:0 0 16px var(--redglow)}
+.hud-live-dot{width:5px;height:5px;background:#fff;border-radius:50%;animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.hud-viewers{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:4px 12px;font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.8)}
+.hud-bottom{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:22px 14px 12px}
+.chat-msgs{display:flex;flex-direction:column;gap:5px}
+.chat-msg{font-size:11px;line-height:1.4;display:flex;gap:7px}
+.chat-user{font-weight:700;flex-shrink:0;font-family:var(--font-mono)}
+.chat-text{color:rgba(255,255,255,.7)}
+
+/* NEW: Quality badge */
+.hud-quality{position:absolute;top:12px;right:50%;transform:translateX(50%);background:rgba(0,0,0,.7);border:1px solid rgba(6,182,212,.3);border-radius:4px;padding:3px 10px;font-family:var(--font-mono);font-size:9px;color:var(--cyan);letter-spacing:.1em}
+
+.stream-bottom{padding:16px 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;border-top:1px solid rgba(255,255,255,.05)}
+.mini-stat{display:flex;flex-direction:column;gap:4px}
+.mini-val{font-family:var(--font-display);font-size:24px;line-height:1;letter-spacing:.5px}
+.mini-val.r{color:var(--red)}
+.mini-val.g{color:var(--green)}
+.mini-val.b{color:var(--cyan)}
+.mini-val.o{color:var(--gold)}
+.mini-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.07em;color:var(--muted)}
+
+.demo-counter-strip{padding:14px 20px 0;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.demo-counter-copy{display:flex;flex-direction:column;gap:6px}
+.demo-counter-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.demo-counter-value{font-family:var(--font-display);font-size:34px;letter-spacing:1px;color:#fff;line-height:1}
+.demo-counter-note{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;color:var(--green);text-align:right;max-width:150px}
+
+.demo-hint{padding:12px 20px 0;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;color:var(--muted)}
+.stream-actions{padding:12px 20px 20px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.05)}
+.act-btn{flex:1 1 calc(20% - 8px);padding:10px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02);font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--muted);cursor:pointer!important;transition:all .2s;text-align:center;letter-spacing:.04em;appearance:none}
+.act-btn:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:var(--text)}
+.act-btn:focus-visible{outline:2px solid rgba(124,58,237,.55);outline-offset:2px}
+.act-btn.active{background:rgba(255,23,68,.12);border-color:rgba(255,23,68,.3);color:var(--red)}
+
+/* ─── FLOATING BADGES ─── */
+.float-badge{position:absolute;background:rgba(10,10,28,.9);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(20px);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 30px rgba(124,58,237,.1);animation:badgeFloat var(--bd,4s) ease-in-out infinite var(--bdd,0s)}
+@keyframes badgeFloat{0%,100%{transform:translateY(0) rotate(var(--br,0deg))}50%{transform:translateY(-10px) rotate(var(--br,0deg))}}
+.fb1{top:60px;right:-28px;--bd:5s;--br:-1deg}
+.fb2{bottom:210px;left:-32px;--bd:6s;--bdd:-2s;--br:1deg}
+.fb3{bottom:120px;right:-14px;--bd:4.5s;--bdd:-1s;--br:-.5deg}
+.fb-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.fb-icon.r{background:rgba(255,23,68,.2);box-shadow:0 0 20px rgba(255,23,68,.2)}
+.fb-icon.g{background:rgba(16,185,129,.2);box-shadow:0 0 20px rgba(16,185,129,.2)}
+.fb-icon.b{background:rgba(6,182,212,.2);box-shadow:0 0 20px rgba(6,182,212,.2)}
+.fb-main{color:var(--text);font-weight:700;font-size:13px}
+.fb-sub{color:var(--muted);font-size:10px;font-family:var(--font-mono);margin-top:2px}
+
+@keyframes slideUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── TICKER ─── */
+.ticker-wrap{background:var(--red);padding:0;overflow:hidden;position:relative;z-index:10}
+.ticker-wrap::before,.ticker-wrap::after{content:'';position:absolute;top:0;bottom:0;width:100px;z-index:1}
+.ticker-wrap::before{left:0;background:linear-gradient(to right,var(--red),transparent)}
+.ticker-wrap::after{right:0;background:linear-gradient(to left,var(--red),transparent)}
+.ticker-track{display:flex;white-space:nowrap;animation:tick 28s linear infinite;padding:10px 0}
+.ticker-track:hover{animation-play-state:paused}
+.ti{font-family:var(--font-display);font-size:13px;letter-spacing:.2em;padding:0 28px;color:rgba(0,0,0,.9)}
+.ti-sep{color:rgba(0,0,0,.35)}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ─── FEATURES ─── */
+.features{padding:150px 60px;max-width:1260px;margin:0 auto}
+.sec-label{display:flex;align-items:center;gap:12px;font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--violet2);margin-bottom:14px}
+.sec-label::before{content:'';display:block;width:24px;height:1px;background:var(--violet2)}
+.sec-h2{font-family:var(--font-display);font-size:clamp(56px,6vw,86px);font-weight:400;line-height:1.0;letter-spacing:3px;margin-bottom:14px}
+.sec-h2 em{font-style:normal;color:var(--red);text-shadow:0 0 40px rgba(255,23,68,.4)}
+.sec-p{font-size:15px;line-height:1.8;color:var(--muted);max-width:500px;margin-bottom:80px}
+
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+.feat-card{background:var(--bg1);padding:44px 36px;position:relative;overflow:hidden;transition:background .3s,transform .3s}
+.feat-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 0% 100%,var(--cg,rgba(255,23,68,.04)),transparent 60%);opacity:0;transition:opacity .4s}
+.feat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ca,var(--red)),transparent);opacity:0;transition:opacity .4s}
+.feat-card:hover{background:var(--surface);transform:translateY(-2px)}
+.feat-card:hover::before,.feat-card:hover::after{opacity:1}
+.feat-num{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--dim);margin-bottom:22px}
+.feat-icon-wrap{width:48px;height:48px;border-radius:12px;background:var(--ci,rgba(255,23,68,.08));border:1px solid var(--cb,rgba(255,23,68,.18));display:flex;align-items:center;justify-content:center;margin-bottom:22px;transition:box-shadow .3s}
+.feat-card:hover .feat-icon-wrap{box-shadow:0 0 24px var(--cg,rgba(255,23,68,.2))}
+.feat-icon-wrap svg{width:22px;height:22px}
+.feat-title{font-family:var(--font-display);font-size:22px;font-weight:400;margin-bottom:12px;letter-spacing:.5px}
+.feat-desc{font-size:14px;color:var(--muted);line-height:1.75}
+
+/* ─── SHOWCASE ─── */
+.showcase{padding:110px 60px;background:var(--bg1);border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden}
+.showcase-inner{max-width:1260px;margin:0 auto;display:grid;grid-template-columns:1fr 1.35fr;gap:80px;align-items:center}
+.dashboard-mock{background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden;box-shadow:0 60px 120px rgba(0,0,0,.6),0 0 60px rgba(124,58,237,.05)}
+.db-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.015)}
+.db-dots{display:flex;gap:7px}
+.db-dot{width:10px;height:10px;border-radius:50%}
+.db-dot:nth-child(1){background:#ff5f57}
+.db-dot:nth-child(2){background:#ffbd2e}
+.db-dot:nth-child(3){background:#28ca41}
+.db-title{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.db-body{padding:20px;display:flex;flex-direction:column;gap:16px}
+.db-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.db-stat{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:14px;transition:border-color .3s}
+.db-stat:hover{border-color:rgba(124,58,237,.3)}
+.db-sv{font-family:var(--font-display);font-size:24px;font-weight:400;color:#fff;line-height:1;letter-spacing:.5px}
+.db-sl{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.07em;margin-top:5px}
+.db-chart-area{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:16px;height:130px;position:relative;overflow:hidden}
+.db-alerts{display:flex;flex-direction:column;gap:7px}
+.db-alert{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--bg1);border:1px solid var(--border);border-radius:7px;font-size:12px;line-height:1.5;color:var(--muted)}
+.db-alert strong{color:var(--text)}
+.db-alert-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+
+/* ─── WAVEFORM SECTION ─── */
+.waveform-section{height:200px;position:relative;overflow:hidden;background:var(--bg);display:flex;align-items:center}
+#wave-canvas{width:100%;height:100%;display:block}
+.wave-overlay{position:absolute;inset:0;background:linear-gradient(to right,var(--bg) 0%,transparent 8%,transparent 92%,var(--bg) 100%);pointer-events:none}
+
+/* ─── PRICING ─── */
+.pricing{padding:150px 60px;position:relative;overflow:hidden}
+.pricing::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:900px;height:900px;background:radial-gradient(circle,rgba(124,58,237,.06),transparent 70%);pointer-events:none;filter:blur(40px)}
+.pricing-inner{max-width:1100px;margin:0 auto}
+.pricing-header{text-align:center;margin-bottom:70px}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start}
+.p-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:38px 34px;position:relative;transition:all .35s}
+.p-card:hover{border-color:rgba(124,58,237,.3);transform:translateY(-4px);box-shadow:0 40px 80px rgba(0,0,0,.3)}
+.p-card.hot{border-color:var(--red);background:linear-gradient(155deg,rgba(255,23,68,.05),var(--surface) 50%);box-shadow:0 0 80px rgba(255,23,68,.08),0 40px 80px rgba(0,0,0,.3)}
+.p-badge{display:inline-flex;background:linear-gradient(135deg,var(--red),#c2185b);color:#fff;font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;padding:4px 12px;border-radius:20px;position:absolute;top:-14px;left:50%;transform:translateX(-50%);white-space:nowrap;font-weight:500;box-shadow:0 4px 20px var(--redglow)}
+.p-name{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:22px}
+.p-price{font-family:var(--font-display);font-size:70px;font-weight:400;line-height:1;letter-spacing:2px;color:#fff;margin-bottom:6px}
+.p-price sup{font-size:28px;color:var(--muted);vertical-align:super;font-family:var(--font-body);font-weight:400}
+.p-period{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:28px}
+.p-div{height:1px;background:var(--border);margin-bottom:26px}
+.p-feat{display:flex;align-items:flex-start;gap:10px;margin-bottom:13px;font-size:13px;color:var(--muted);line-height:1.5}
+.p-feat .ck{color:var(--green);flex-shrink:0;font-size:12px;margin-top:2px}
+.p-feat.off{color:var(--dim)}
+.p-feat.off .ck{color:var(--dim)}
+.p-btn{width:100%;margin-top:28px;padding:14px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--text);font-family:var(--font-body);font-weight:700;font-size:13px;letter-spacing:.04em;cursor:none;transition:all .25s}
+.p-btn:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.2)}
+.p-btn.hot{background:linear-gradient(135deg,var(--red),#c2185b);border-color:transparent;box-shadow:0 8px 30px var(--redglow)}
+.p-btn.hot:hover{box-shadow:0 12px 50px rgba(255,23,68,.6)}
+
+/* ─── TESTIMONIALS ─── */
+.proof{padding:150px 60px;max-width:1260px;margin:0 auto}
+.proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:70px}
+.t-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:30px;position:relative;overflow:hidden;transition:all .35s}
+.t-card:hover{border-color:rgba(124,58,237,.35);transform:translateY(-5px);box-shadow:0 30px 70px rgba(0,0,0,.3)}
+.t-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--tc1,var(--violet)),var(--tc2,var(--red)))}
+.t-quote{font-size:14px;line-height:1.8;color:var(--muted);margin-bottom:22px}
+.t-quote strong{color:var(--text)}
+.t-author{display:flex;align-items:center;gap:13px}
+.t-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:18px;flex-shrink:0;background:var(--surface2)}
+.t-name{font-weight:700;font-size:14px;color:var(--text);font-family:var(--font-body)}
+.t-handle{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:3px}
+.t-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:9px;padding:4px 12px;border-radius:20px;margin-bottom:18px;letter-spacing:.08em}
+.t-badge.live{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--green)}
+.t-badge.part{background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);color:var(--violet2)}
+.t-badge.feat{background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);color:var(--cyan)}
+.t-badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:pdot 2s infinite}
+
+/* ─── CTA ─── */
+.cta-section{padding:160px 60px;text-align:center;position:relative;overflow:hidden}
+#cta-canvas{position:absolute;inset:0;width:100%;height:100%}
+.cta-content{position:relative;z-index:10;max-width:1180px;margin:0 auto}
+.cta-border{position:absolute;inset:50px;border:1px solid rgba(124,58,237,.15);border-radius:32px;pointer-events:none;z-index:5}
+.cta-h2{font-family:var(--font-display);font-size:clamp(72px,11vw,140px);font-weight:400;line-height:.92;letter-spacing:4px;margin-bottom:40px}
+.cta-h2 .ln1{color:rgba(255,255,255,.12)}
+.cta-h2 .ln2{background:linear-gradient(135deg,var(--red),var(--violet2) 50%,var(--cyan));background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 40px rgba(255,23,68,.3))}
+.cta-sub{font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;color:var(--muted);margin-top:24px}
+
+.waitlist-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:stretch;text-align:left}
+.waitlist-copy{display:flex;flex-direction:column;justify-content:center;padding:24px 10px}
+.waitlist-kicker{display:inline-flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);margin-bottom:22px}
+.waitlist-kicker::before{content:'';width:28px;height:1px;background:currentColor}
+.waitlist-copy .cta-h2{margin-bottom:22px}
+.waitlist-copy .cta-sub{margin-top:0;max-width:520px;line-height:1.8}
+.waitlist-total{font-family:var(--font-display);font-size:54px;letter-spacing:2px;line-height:1;margin:18px 0 6px}
+.waitlist-total span{font-size:20px;color:var(--muted)}
+.waitlist-caption{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.waitlist-meta{display:flex;flex-wrap:wrap;gap:14px;margin-top:26px}
+.waitlist-pill{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.04);font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;color:var(--text)}
+.waitlist-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 14px rgba(16,185,129,.45)}
+.waitlist-card{padding:26px;background:rgba(10,10,24,.88);border:1px solid rgba(255,255,255,.08);border-radius:24px;backdrop-filter:blur(30px);box-shadow:0 40px 100px rgba(0,0,0,.45)}
+.waitlist-card-title{font-family:var(--font-display);font-size:34px;letter-spacing:2px;margin-bottom:8px}
+.waitlist-card-copy{font-size:14px;line-height:1.7;color:var(--muted);margin-bottom:22px}
+.waitlist-form{display:grid;gap:14px}
+.waitlist-label{display:block;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.waitlist-field,.waitlist-select{width:100%;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:all .25s}
+.waitlist-field::placeholder{color:var(--muted)}
+.waitlist-field:focus,.waitlist-select:focus{border-color:rgba(124,58,237,.45);box-shadow:0 0 0 3px rgba(124,58,237,.12);background:rgba(124,58,237,.05)}
+.waitlist-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.waitlist-submit{justify-content:center;width:100%}
+.waitlist-platforms{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.waitlist-badge{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;color:var(--text)}
+.waitlist-badge img{width:auto;height:16px;display:block;flex-shrink:0}
+.waitlist-badge.youtube{border-color:rgba(255,0,0,.18);background:rgba(255,0,0,.08)}
+.waitlist-badge.twitch{border-color:rgba(145,70,255,.18);background:rgba(145,70,255,.08)}
+.waitlist-badge.kick{border-color:rgba(83,252,24,.18);background:rgba(83,252,24,.08)}
+.waitlist-status{min-height:20px;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;color:var(--muted)}
+.waitlist-status[data-state="success"]{color:var(--green)}
+.waitlist-status[data-state="error"]{color:var(--red)}
+
+/* ─── FOOTER ─── */
+footer{padding:50px 60px;border-top:1px solid var(--border);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:40px;max-width:1400px;margin:0 auto}
+.foot-logo{font-family:var(--font-display);font-size:22px;letter-spacing:2px;color:var(--muted)}
+.foot-links{display:flex;gap:32px;justify-content:center}
+.foot-links a{color:var(--dim);text-decoration:none;font-family:var(--font-mono);font-size:11px;letter-spacing:.07em;transition:color .2s}
+.foot-links a:hover{color:var(--muted)}
+.foot-copy{font-family:var(--font-mono);font-size:11px;color:var(--dim)}
+
+/* ─── SCROLL REVEAL ─── */
+.r{opacity:0;transform:translateY(36px);transition:opacity .8s cubic-bezier(.23,1,.32,1),transform .8s cubic-bezier(.23,1,.32,1)}
+.r.in{opacity:1;transform:none}
+.r[data-delay="1"]{transition-delay:.1s}
+.r[data-delay="2"]{transition-delay:.25s}
+.r[data-delay="3"]{transition-delay:.4s}
+
+@media(max-width:900px){
+  nav{padding:0 20px}.nav-links{display:none}
+  .hero{height:auto;min-height:unset;padding:120px 0 60px}
+  .hero-content{grid-template-columns:1fr;padding:0 24px;gap:40px}
+  .hero-right{display:block;max-width:560px;width:100%;margin:0 auto}
+  .platform-proof-list{gap:10px}
+  .platform-pill{min-width:0;flex:1 1 100%}
+  .platform-pill span{font-size:22px}
+  .hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .demo-counter-strip{align-items:flex-start;flex-direction:column}
+  .demo-counter-note{text-align:left;max-width:none}
+  .act-btn{flex:1 1 calc(50% - 8px)}
+  .features,.showcase,.pricing,.proof,.cta-section{padding:80px 24px}
+  .feat-grid,.pricing-grid,.proof-grid{grid-template-columns:1fr}
+  .showcase-inner{grid-template-columns:1fr}
+  .waitlist-grid,.waitlist-row{grid-template-columns:1fr}
+  .waitlist-copy{padding:0}
+  .cta-border{inset:20px}
+  footer{grid-template-columns:1fr;text-align:center;gap:18px;padding:32px 24px}
+  .foot-links{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur-ring"></div>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <a class="nav-logo" href="index.html" aria-label="Second Chat home">
+    <img class="nav-logo-wordmark" src="assets/logo.png" alt="Second Chat logo">
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#analytics">Analytics</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="login.html">Docs</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="nav-status"><div class="live-dot"></div>All systems live</div>
+    <a class="btn-nav" href="login.html">Start Free</a>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-overlay"></div>
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
+
+  <div class="hero-content">
+    <!-- Left -->
+    <div class="hero-left">
+      <div class="hero-tag">
+        <div class="hero-tag-pulse"></div>
+        THE PROFESSIONAL STREAMING OS
+      </div>
+      <h1 class="hero-h1">
+        <span class="w1">LEVEL</span>
+        <span class="w2">UP YOUR</span>
+        <span class="w3">STREAM</span>
+      </h1>
+      <p class="hero-p">
+        <strong>Second Chat</strong> is the all-in-one platform built for creators serious about growth. Ultra-low latency, real-time analytics, and AI-powered tools — all unified.
+      </p>
+      <div class="platform-proof" aria-label="Supported platforms">
+        <div class="platform-proof-label">Connect once. Go live on:</div>
+        <div class="platform-proof-list">
+          <div class="platform-pill twitch">
+            <img src="assets/twitch.png" alt="Twitch logo">
+            <span>Twitch</span>
+          </div>
+          <div class="platform-pill kick">
+            <img src="assets/kick.png" alt="Kick logo">
+            <span>Kick</span>
+          </div>
+          <div class="platform-pill youtube">
+            <img src="assets/youtube.png" alt="YouTube logo">
+            <span>YouTube</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-btns">
+        <a class="btn-primary" href="login.html">Launch Your Stream</a>
+        <a class="btn-secondary" href="#live-demo">Try Live Demo</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <div class="stat-n">120<span class="unit">K+</span></div>
+          <div class="stat-l">Active Streamers</div>
+        </div>
+        <div class="stat">
+          <div class="stat-n">99.9<span class="unit">%</span></div>
+          <div class="stat-l">Uptime SLA</div>
+        </div>
+        <div class="stat">
+          <div class="stat-n">&lt;80<span class="unit">ms</span></div>
+          <div class="stat-l">Avg Latency</div>
+        </div>
+        <div class="stat">
+          <div class="stat-n compact" id="chat-total">1.28M</div>
+          <div class="stat-l">Chats Received</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Live Card -->
+    <div class="hero-right" style="position:relative">
+      <div class="float-badge fb1">
+        <div class="fb-icon g"></div>
+        <div>
+          <div class="fb-main">+127% growth</div>
+          <div class="fb-sub">past 30 days</div>
+        </div>
+      </div>
+      <div class="float-badge fb2">
+        <div class="fb-icon r"></div>
+        <div>
+          <div class="fb-main"><span id="vc-badge">24.7</span>K live now</div>
+          <div class="fb-sub">concurrent viewers</div>
+        </div>
+      </div>
+      <div class="float-badge fb3">
+        <div class="fb-icon b"></div>
+        <div>
+          <div class="fb-main">68ms latency</div>
+          <div class="fb-sub">edge delivery</div>
+        </div>
+      </div>
+
+      <div class="stream-card" id="live-demo">
+        <div class="stream-screen">
+          <canvas id="stream-canvas"></canvas>
+          <div class="stream-hud">
+            <div class="hud-top">
+              <div class="hud-live"><div class="hud-live-dot"></div>LIVE</div>
+              <div class="hud-quality" id="demo-quality">4K · 60FPS</div>
+              <div class="hud-viewers"><span id="vc">24.7K</span></div>
+            </div>
+            <div class="hud-bottom">
+              <div class="chat-msgs" id="chat" aria-live="polite">
+                <div class="chat-msg"><span class="chat-user" style="color:#ff1744">nova_plays</span><span class="chat-text">LET'S GOOO 🔥</span></div>
+                <div class="chat-msg"><span class="chat-user" style="color:#a855f7">king_chaos</span><span class="chat-text">clutch clutch clutch</span></div>
+                <div class="chat-msg"><span class="chat-user" style="color:#06b6d4">xgamer99</span><span class="chat-text">POG this setup is insane</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stream-bottom">
+          <div class="mini-stat"><div class="mini-val r" id="mini-primary">24.7K</div><div class="mini-label" id="mini-primary-label">Viewers</div></div>
+          <div class="mini-stat"><div class="mini-val g" id="mini-secondary">+34%</div><div class="mini-label" id="mini-secondary-label">Retention</div></div>
+          <div class="mini-stat"><div class="mini-val b" id="mini-tertiary">68ms</div><div class="mini-label" id="mini-tertiary-label">Latency</div></div>
+          <div class="mini-stat"><div class="mini-val o" id="mini-quaternary">$842</div><div class="mini-label" id="mini-quaternary-label">This Stream</div></div>
+        </div>
+
+        <div class="demo-counter-strip">
+          <div class="demo-counter-copy">
+            <div class="demo-counter-label">Live Chats Received</div>
+            <div class="demo-counter-value" id="chat-received-live">1,284,200</div>
+          </div>
+          <div class="demo-counter-note">Merged from Twitch, Kick, and YouTube in real time.</div>
+        </div>
+        <div class="demo-hint" id="demo-hint">Tap the live demo controls below to preview scenes, alerts, chat, and analytics.</div>
+        <div class="stream-actions">
+          <button type="button" class="act-btn active" data-demo-mode="rec" aria-pressed="true">Live</button>
+          <button type="button" class="act-btn" data-demo-mode="scenes" aria-pressed="false">Scenes</button>
+          <button type="button" class="act-btn" data-demo-mode="alerts" aria-pressed="false">Alerts</button>
+          <button type="button" class="act-btn" data-demo-mode="chat" aria-pressed="false">Chat</button>
+          <button type="button" class="act-btn" data-demo-mode="analytics" aria-pressed="false">Analytics</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TICKER ─── -->
+<div class="ticker-wrap">
+  <div class="ticker-track">
+    <span class="ti">ULTRA LOW LATENCY</span><span class="ti ti-sep">◆</span>
+    <span class="ti">4K 60FPS STREAMING</span><span class="ti ti-sep">◆</span>
+    <span class="ti">REAL-TIME ANALYTICS</span><span class="ti ti-sep">◆</span>
+    <span class="ti">MULTI-PLATFORM SIMULCAST</span><span class="ti ti-sep">◆</span>
+    <span class="ti">AI SCENE DETECTION</span><span class="ti ti-sep">◆</span>
+    <span class="ti">INSTANT CLIP SHARING</span><span class="ti ti-sep">◆</span>
+    <span class="ti">EDGE DELIVERY NETWORK</span><span class="ti ti-sep">◆</span>
+    <span class="ti">ULTRA LOW LATENCY</span><span class="ti ti-sep">◆</span>
+    <span class="ti">4K 60FPS STREAMING</span><span class="ti ti-sep">◆</span>
+    <span class="ti">REAL-TIME ANALYTICS</span><span class="ti ti-sep">◆</span>
+    <span class="ti">MULTI-PLATFORM SIMULCAST</span><span class="ti ti-sep">◆</span>
+    <span class="ti">AI SCENE DETECTION</span><span class="ti ti-sep">◆</span>
+    <span class="ti">INSTANT CLIP SHARING</span><span class="ti ti-sep">◆</span>
+  </div>
+</div>
+
+<!-- ─── FEATURES ─── -->
+<section class="features" id="features">
+  <div class="r">
+    <div class="sec-label">Platform Engine</div>
+    <h2 class="sec-h2">BUILT FOR <em>PERFORMANCE</em></h2>
+    <p class="sec-p">Everything you need to broadcast, monetize, and grow your audience in a single unified operating system designed exclusively for top-tier creators.</p>
+  </div>
+
+  <div class="feat-grid">
+    <div class="feat-card r" data-delay="1" style="--ca:var(--red);--ci:rgba(255,23,68,.08);--cb:rgba(255,23,68,.18);--cg:rgba(255,23,68,.15)">
+      <div class="feat-num">01</div>
+      <div class="feat-icon-wrap"><svg fill="none" stroke="var(--red)" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <div class="feat-title">GLOBAL EDGE NETWORK</div>
+      <div class="feat-desc">Route your stream through our decentralized edge servers guaranteeing sub-80ms latency for viewers anywhere in the world.</div>
+    </div>
+    <div class="feat-card r" data-delay="2" style="--ca:var(--violet2);--ci:rgba(168,85,247,.08);--cb:rgba(168,85,247,.18);--cg:rgba(168,85,247,.15)">
+      <div class="feat-num">02</div>
+      <div class="feat-icon-wrap"><svg fill="none" stroke="var(--violet2)" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+      <div class="feat-title">MULTI-PLATFORM SIMULCAST</div>
+      <div class="feat-desc">Broadcast to Twitch, YouTube, Kick, and TikTok simultaneously without CPU overhead or third-party plugins.</div>
+    </div>
+    <div class="feat-card r" data-delay="3" style="--ca:var(--cyan);--ci:rgba(6,182,212,.08);--cb:rgba(6,182,212,.18);--cg:rgba(6,182,212,.15)">
+      <div class="feat-num">03</div>
+      <div class="feat-icon-wrap"><svg fill="none" stroke="var(--cyan)" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="feat-title">UNIFIED SMART CHAT</div>
+      <div class="feat-desc">Aggregate messages from all platforms into one interface with AI moderation, highlight filtering, and live translation.</div>
+    </div>
+    <div class="feat-card r" data-delay="1" style="--ca:var(--gold);--ci:rgba(245,158,11,.08);--cb:rgba(245,158,11,.18);--cg:rgba(245,158,11,.15)">
+      <div class="feat-num">04</div>
+      <div class="feat-icon-wrap"><svg fill="none" stroke="var(--gold)" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <div class="feat-title">ADVANCED MONETIZATION</div>
+      <div class="feat-desc">Tipping, memberships, and automated sponsor overlays with 0% platform fees taken from your hard-earned revenue.</div>
+    </div>
+    <div class="feat-card r" data-delay="2" style="--ca:var(--green);--ci:rgba(16,185,129,.08);--cb:rgba(16,185,129,.18);--cg:rgba(16,185,129,.15)">
+      <div class="feat-num">05</div>
+      <div class="feat-icon-wrap"><svg fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="feat-title">REAL-TIME TELEMETRY</div>
+      <div class="feat-desc">Track retention graphs, audience demographics, and engagement spikes to understand exactly what content resonates.</div>
+    </div>
+    <div class="feat-card r" data-delay="3" style="--ca:var(--text);--ci:rgba(255,255,255,.05);--cb:rgba(255,255,255,.12);--cg:rgba(255,255,255,.08)">
+      <div class="feat-num">06</div>
+      <div class="feat-icon-wrap"><svg fill="none" stroke="var(--text)" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg></div>
+      <div class="feat-title">AUTO-CLIPPING AI</div>
+      <div class="feat-desc">Neural engine listens for hype moments to automatically generate ready-to-post Shorts and Reels from your broadcast.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── WAVEFORM ─── -->
+<div class="waveform-section">
+  <canvas id="wave-canvas"></canvas>
+  <div class="wave-overlay"></div>
+</div>
+
+<!-- ─── SHOWCASE ─── -->
+<section class="showcase" id="analytics">
+  <div class="showcase-inner">
+    <div class="r">
+      <div class="sec-label">Command Center</div>
+      <h2 class="sec-h2">ACTIONABLE DATA,<br><em>ZERO CLUTTER.</em></h2>
+      <p class="sec-p" style="margin-bottom:32px">Manage your entire streaming ecosystem from a sleek native dashboard that consumes virtually zero system resources.</p>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:18px">
+        <li style="display:flex;align-items:center;gap:14px;font-size:14px;color:var(--text);font-weight:600"><span style="color:var(--green);font-size:16px">✓</span> Full OBS & XSplit Integration</li>
+        <li style="display:flex;align-items:center;gap:14px;font-size:14px;color:var(--text);font-weight:600"><span style="color:var(--green);font-size:16px">✓</span> Cloud-Synced Scene Collections</li>
+        <li style="display:flex;align-items:center;gap:14px;font-size:14px;color:var(--text);font-weight:600"><span style="color:var(--green);font-size:16px">✓</span> Hardware-Accelerated Encoding</li>
+      </ul>
+    </div>
+    <div class="dashboard-mock r" data-delay="2">
+      <div class="db-header">
+        <div class="db-dots"><div class="db-dot"></div><div class="db-dot"></div><div class="db-dot"></div></div>
+        <div class="db-title">streamforge — dashboard.app</div>
+        <div style="width:40px"></div>
+      </div>
+      <div class="db-body">
+        <div class="db-stats-row">
+          <div class="db-stat"><div class="db-sv" style="color:var(--cyan)">8.2M</div><div class="db-sl">Impressions</div></div>
+          <div class="db-stat"><div class="db-sv" style="color:var(--green)">142K</div><div class="db-sl">New Followers</div></div>
+          <div class="db-stat"><div class="db-sv" style="color:var(--gold)">$12.4K</div><div class="db-sl">Sub Revenue</div></div>
+          <div class="db-stat"><div class="db-sv" style="color:var(--red)">18.5%</div><div class="db-sl">Conv. Rate</div></div>
+        </div>
+        <div class="db-chart-area"><canvas id="mockChart"></canvas></div>
+        <div class="db-alerts">
+          <div class="db-alert"><div class="db-alert-dot" style="background:var(--red)"></div><div><strong>System Event:</strong> Server US-East high load. Switching to US-Central automatically.</div></div>
+          <div class="db-alert"><div class="db-alert-dot" style="background:var(--green)"></div><div><strong>Milestone:</strong> You just crossed 100,000 concurrent viewers. Incredible!</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PRICING ─── -->
+<section class="pricing" id="pricing">
+  <div class="pricing-inner">
+    <div class="pricing-header r">
+      <div class="sec-label" style="justify-content:center">Simple Pricing</div>
+      <h2 class="sec-h2">SCALE WITHOUT <em>LIMITS.</em></h2>
+    </div>
+    <div class="pricing-grid">
+      <div class="p-card r" data-delay="1">
+        <div class="p-name">Creator</div>
+        <div class="p-price"><sup>$</sup>0</div>
+        <div class="p-period">forever free</div>
+        <div class="p-div"></div>
+        <div class="p-feat"><div class="ck">✓</div> 1080p 60fps Streaming</div>
+        <div class="p-feat"><div class="ck">✓</div> Simulcast to 2 platforms</div>
+        <div class="p-feat"><div class="ck">✓</div> Basic Chat Aggregation</div>
+        <div class="p-feat off"><div class="ck">×</div> AI Auto-Clipping</div>
+        <div class="p-feat off"><div class="ck">×</div> Priority Support</div>
+        <button class="p-btn">Start Free</button>
+      </div>
+      <div class="p-card hot r" data-delay="2">
+        <div class="p-badge">MOST POPULAR</div>
+        <div class="p-name" style="color:var(--red)">Partner</div>
+        <div class="p-price"><sup>$</sup>19</div>
+        <div class="p-period">per month, billed annually</div>
+        <div class="p-div"></div>
+        <div class="p-feat"><div class="ck">✓</div> 4K 60fps Streaming</div>
+        <div class="p-feat"><div class="ck">✓</div> Unlimited Simulcasting</div>
+        <div class="p-feat"><div class="ck">✓</div> Advanced AI Moderation</div>
+        <div class="p-feat"><div class="ck">✓</div> AI Auto-Clipping Engine</div>
+        <div class="p-feat"><div class="ck">✓</div> 0% Monetization Fees</div>
+        <button class="p-btn hot">Get Partner</button>
+      </div>
+      <div class="p-card r" data-delay="3">
+        <div class="p-name">Agency</div>
+        <div class="p-price"><sup>$</sup>89</div>
+        <div class="p-period">per month, billed annually</div>
+        <div class="p-div"></div>
+        <div class="p-feat"><div class="ck">✓</div> Everything in Partner</div>
+        <div class="p-feat"><div class="ck">✓</div> Manage up to 10 Creators</div>
+        <div class="p-feat"><div class="ck">✓</div> Custom RTMP Ingests</div>
+        <div class="p-feat"><div class="ck">✓</div> Sponsor ROI Dashboards</div>
+        <div class="p-feat"><div class="ck">✓</div> 24/7 Priority Support</div>
+        <button class="p-btn">Contact Sales</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TESTIMONIALS ─── -->
+<section class="proof">
+  <div class="r" style="text-align:center">
+    <div class="sec-label" style="justify-content:center">Wall of Love</div>
+    <h2 class="sec-h2">TRUSTED BY <em>PROFESSIONALS</em></h2>
+  </div>
+  <div class="proof-grid">
+    <div class="t-card r" data-delay="1" style="--tc1:var(--violet);--tc2:var(--cyan)">
+      <div class="t-badge part"><div class="t-badge-dot"></div>Second Chat Partner</div>
+      <p class="t-quote">"Switching to Second Chat dropped my CPU usage by 40% while pushing higher quality video to both Twitch and YouTube simultaneously. It's <strong>black magic.</strong>"</p>
+      <div class="t-author">
+        <div class="t-avatar" style="color:var(--violet2)">V</div>
+        <div><div class="t-name">ValkyrieLive</div><div class="t-handle">3.2M Followers</div></div>
+      </div>
+    </div>
+    <div class="t-card r" data-delay="2" style="--tc1:var(--red);--tc2:var(--gold)">
+      <div class="t-badge live"><div class="t-badge-dot"></div>Live Full-Time</div>
+      <p class="t-quote">"The AI clipping tool saves me 15 hours a week. Second Chat has already cut and uploaded my best plays to TikTok before I've even ended the stream. <strong>Unreal.</strong>"</p>
+      <div class="t-author">
+        <div class="t-avatar" style="color:var(--red)">X</div>
+        <div><div class="t-name">xGamer99</div><div class="t-handle">1.1M Followers</div></div>
+      </div>
+    </div>
+    <div class="t-card r" data-delay="3" style="--tc1:var(--green);--tc2:var(--cyan)">
+      <div class="t-badge feat"><div class="t-badge-dot"></div>Agency Rep</div>
+      <p class="t-quote">"We manage 20+ esports athletes. One centralized dashboard for analytics, stream health, and sponsorships has completely <strong>revolutionized our workflow.</strong>"</p>
+      <div class="t-author">
+        <div class="t-avatar" style="color:var(--green)">N</div>
+        <div><div class="t-name">Nexus Talent</div><div class="t-handle">Esports Management</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA ─── -->
+<section class="cta-section r" id="waitlist">
+  <canvas id="cta-canvas"></canvas>
+  <div class="cta-border"></div>
+  <div class="cta-content waitlist-grid">
+    <div class="waitlist-copy">
+      <div class="waitlist-kicker">Early Access Queue</div>
+      <h2 class="cta-h2">
+        <div class="ln1">JOIN THE</div>
+        <div class="ln2">WAITLIST</div>
+      </h2>
+      <div class="cta-sub">Second Chat is opening private access in waves for creators who want Twitch, Kick, and YouTube unified in one fast control center.</div>
+      <div class="waitlist-total" id="waitlist-count">4,218<span> creators queued</span></div>
+      <div class="waitlist-caption">Founding creators get faster onboarding, migration help, and priority platform rollouts.</div>
+      <div class="waitlist-meta">
+        <div class="waitlist-pill"><span class="waitlist-dot"></span>Invite waves every Friday</div>
+        <div class="waitlist-pill">Unified chat, alerts, and routing</div>
+      </div>
+    </div>
+    <div class="waitlist-card">
+      <div class="waitlist-card-title">Get Early Access</div>
+      <div class="waitlist-card-copy">Drop your email and primary platform. We’ll hold your spot and send your invite wave when your batch opens.</div>
+      <form id="waitlist-form" class="waitlist-form">
+        <div>
+          <label class="waitlist-label" for="waitlist-email">Email Address</label>
+          <input id="waitlist-email" class="waitlist-field" type="email" placeholder="you@creatormail.com" required>
+        </div>
+        <div class="waitlist-row">
+          <div>
+            <label class="waitlist-label" for="waitlist-platform">Primary Platform</label>
+            <select id="waitlist-platform" class="waitlist-select">
+              <option value="Twitch">Twitch</option>
+              <option value="Kick">Kick</option>
+              <option value="YouTube">YouTube</option>
+              <option value="Multi-platform">Multi-platform</option>
+            </select>
+          </div>
+          <div>
+            <label class="waitlist-label" for="waitlist-channel">Channel Type</label>
+            <select id="waitlist-channel" class="waitlist-select">
+              <option value="Gaming">Gaming</option>
+              <option value="Just Chatting">Just Chatting</option>
+              <option value="IRL">IRL</option>
+              <option value="Podcast">Podcast</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="waitlist-label">Supported At Launch</div>
+          <div class="waitlist-platforms">
+            <div class="waitlist-badge twitch">
+              <img src="assets/twitch.png" alt="Twitch logo">
+              Twitch
+            </div>
+            <div class="waitlist-badge kick">
+              <img src="assets/kick.png" alt="Kick logo">
+              Kick
+            </div>
+            <div class="waitlist-badge youtube">
+              <img src="assets/youtube.png" alt="YouTube logo">
+              YouTube
+            </div>
+          </div>
+        </div>
+        <button class="btn-primary waitlist-submit" type="submit">Join The Waitlist</button>
+        <div class="waitlist-status" id="waitlist-status">Priority invites are currently going to multi-platform creators and chat-heavy channels.</div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <a class="foot-logo" href="index.html" style="text-decoration:none">SECOND CHAT</a>
+  <div class="foot-links">
+    <a href="#">Platform</a><a href="#">Solutions</a><a href="#">Developers</a>
+    <a href="#">Company</a><a href="#">Privacy</a><a href="#">Terms</a>
+  </div>
+  <div class="foot-copy">© 2026 Second Chat Inc.</div>
+</footer>
+
+<script>
+/* ─── CURSOR ─── */
+const cur = document.getElementById('cur');
+const curRing = document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+window.addEventListener('mousemove',(e)=>{
+  mx=e.clientX;my=e.clientY;
+  cur.style.left=mx+'px';cur.style.top=my+'px';
+});
+(function ringLoop(){
+  rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;
+  curRing.style.left=rx+'px';curRing.style.top=ry+'px';
+  requestAnimationFrame(ringLoop);
+})();
+
+/* ─── SCROLL REVEAL ─── */
+const obs = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')});
+},{threshold:0.08});
+document.querySelectorAll('.r').forEach(el=>obs.observe(el));
+
+/* ══════════════════════════════════════════
+   HERO CANVAS — Streaming-themed background
+   Animated streaming packets, signal waves,
+   hexagonal grid, floating nodes
+═══════════════════════════════════════════ */
+(function heroCanvas(){
+  const canvas = document.getElementById('hero-canvas');
+  const ctx = canvas.getContext('2d');
+  let W,H;
+
+  function resize(){
+    W=canvas.width=canvas.offsetWidth;
+    H=canvas.height=canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  /* ── Hexagonal grid ── */
+  function drawHexGrid(){
+    const size=50,cols=Math.ceil(W/size/1.5)+2,rows=Math.ceil(H/size/Math.sqrt(3))+2;
+    ctx.strokeStyle='rgba(124,58,237,0.07)';
+    ctx.lineWidth=0.6;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const x=c*size*1.5;
+        const y=r*size*Math.sqrt(3)+(c%2)*size*Math.sqrt(3)/2;
+        ctx.beginPath();
+        for(let i=0;i<6;i++){
+          const angle=Math.PI/180*(60*i-30);
+          const px=x+size*Math.cos(angle),py=y+size*Math.sin(angle);
+          i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+        }
+        ctx.closePath();ctx.stroke();
+      }
+    }
+  }
+
+  /* ── Signal wave rings ── */
+  const rings=[];
+  function addRing(){
+    rings.push({x:Math.random()*W,y:Math.random()*H,r:0,maxR:120+Math.random()*200,speed:0.6+Math.random()*0.8,alpha:1,color:Math.random()<0.5?'255,23,68':'124,58,237'});
+  }
+  for(let i=0;i<5;i++){setTimeout(addRing,i*1000);}
+  setInterval(addRing,2200);
+
+  /* ── Data packets ── */
+  const packets=[];
+  const paths=[];
+  // Create streaming paths (source → destinations)
+  function makePaths(){
+    paths.length=0;
+    const srcs=3;
+    for(let i=0;i<srcs;i++){
+      const sx=W*0.1+Math.random()*W*0.2,sy=H*0.3+Math.random()*H*0.4;
+      for(let j=0;j<3;j++){
+        paths.push({sx,sy,ex:W*0.7+Math.random()*W*0.25,ey:H*0.15+Math.random()*H*0.7});
+      }
+    }
+  }
+  makePaths();
+  window.addEventListener('resize',makePaths);
+
+  setInterval(()=>{
+    if(paths.length===0)return;
+    const p=paths[Math.floor(Math.random()*paths.length)];
+    packets.push({sx:p.sx,sy:p.sy,ex:p.ex,ey:p.ey,t:0,speed:0.005+Math.random()*0.006,size:2+Math.random()*2,color:Math.random()<0.5?'255,23,68':Math.random()<0.5?'124,58,237':'6,182,212',trail:[]});
+  },180);
+
+  /* ── Floating nodes (server dots) ── */
+  const nodes=[];
+  for(let i=0;i<18;i++){
+    nodes.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*0.2,vy:(Math.random()-.5)*0.2,r:2+Math.random()*2.5,color:['255,23,68','124,58,237','6,182,212','16,185,129'][Math.floor(Math.random()*4)],pulse:Math.random()*Math.PI*2,pulseSpeed:0.02+Math.random()*0.02});
+  }
+
+  /* ── Scanline beam ── */
+  let beamY=-100,beamSpeed=0.4;
+
+  /* ── Spectrum bars at bottom (like broadcast EQ) ── */
+  const bars=Array.from({length:60},(_,i)=>({h:10,th:10+Math.random()*80,speed:0.04+Math.random()*0.06}));
+  let barTimer=0;
+
+  function draw(t){
+    ctx.clearRect(0,0,W,H);
+
+    /* Hex grid */
+    drawHexGrid();
+
+    /* Gradient radials */
+    const gr1=ctx.createRadialGradient(W*0.7,H*0.25,0,W*0.7,H*0.25,W*0.55);
+    gr1.addColorStop(0,'rgba(124,58,237,0.12)');gr1.addColorStop(1,'transparent');
+    ctx.fillStyle=gr1;ctx.fillRect(0,0,W,H);
+
+    const gr2=ctx.createRadialGradient(W*0.15,H*0.7,0,W*0.15,H*0.7,W*0.45);
+    gr2.addColorStop(0,'rgba(255,23,68,0.08)');gr2.addColorStop(1,'transparent');
+    ctx.fillStyle=gr2;ctx.fillRect(0,0,W,H);
+
+    /* Broadcast paths */
+    paths.forEach(p=>{
+      ctx.beginPath();
+      ctx.moveTo(p.sx,p.sy);
+      ctx.lineTo(p.ex,p.ey);
+      ctx.strokeStyle='rgba(124,58,237,0.05)';
+      ctx.lineWidth=0.5;ctx.stroke();
+    });
+
+    /* Floating nodes */
+    nodes.forEach(n=>{
+      n.x+=n.vx;n.y+=n.vy;
+      if(n.x<0||n.x>W)n.vx*=-1;
+      if(n.y<0||n.y>H)n.vy*=-1;
+      n.pulse+=n.pulseSpeed;
+      const alpha=0.5+0.5*Math.sin(n.pulse);
+      const pulsed=n.r*(1+0.5*Math.sin(n.pulse*0.5));
+
+      // Glow ring
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,pulsed+6,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${n.color},${0.05*alpha})`;
+      ctx.fill();
+
+      // Core
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${n.color},${alpha})`;
+      ctx.fill();
+    });
+
+    /* Connect nearby nodes */
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<160){
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x,nodes[i].y);
+          ctx.lineTo(nodes[j].x,nodes[j].y);
+          ctx.strokeStyle=`rgba(124,58,237,${0.08*(1-dist/160)})`;
+          ctx.lineWidth=0.4;ctx.stroke();
+        }
+      }
+    }
+
+    /* Signal rings */
+    for(let i=rings.length-1;i>=0;i--){
+      const ring=rings[i];
+      ring.r+=ring.speed;
+      ring.alpha=1-ring.r/ring.maxR;
+      if(ring.alpha<=0){rings.splice(i,1);continue;}
+      ctx.beginPath();
+      ctx.arc(ring.x,ring.y,ring.r,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(${ring.color},${ring.alpha*0.3})`;
+      ctx.lineWidth=1;ctx.stroke();
+    }
+
+    /* Data packets */
+    for(let i=packets.length-1;i>=0;i--){
+      const p=packets[i];
+      p.t+=p.speed;
+      if(p.t>=1){packets.splice(i,1);continue;}
+      const cx=p.sx+(p.ex-p.sx)*p.t;
+      const cy=p.sy+(p.ey-p.sy)*p.t;
+
+      p.trail.push({x:cx,y:cy});
+      if(p.trail.length>20)p.trail.shift();
+
+      // Trail
+      for(let k=0;k<p.trail.length-1;k++){
+        const alpha=(k/p.trail.length)*0.5;
+        ctx.beginPath();
+        ctx.moveTo(p.trail[k].x,p.trail[k].y);
+        ctx.lineTo(p.trail[k+1].x,p.trail[k+1].y);
+        ctx.strokeStyle=`rgba(${p.color},${alpha})`;
+        ctx.lineWidth=p.size*0.6*(k/p.trail.length);ctx.stroke();
+      }
+
+      // Head
+      ctx.beginPath();
+      ctx.arc(cx,cy,p.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${p.color},0.9)`;
+      ctx.shadowColor=`rgba(${p.color},0.8)`;
+      ctx.shadowBlur=8;
+      ctx.fill();
+      ctx.shadowBlur=0;
+    }
+
+    /* Horizontal scanline beam */
+    beamY+=beamSpeed;
+    if(beamY>H+100)beamY=-100;
+    const beamGrad=ctx.createLinearGradient(0,beamY-40,0,beamY+40);
+    beamGrad.addColorStop(0,'transparent');
+    beamGrad.addColorStop(0.5,'rgba(124,58,237,0.04)');
+    beamGrad.addColorStop(1,'transparent');
+    ctx.fillStyle=beamGrad;
+    ctx.fillRect(0,beamY-40,W,80);
+
+    /* EQ Bars bottom */
+    barTimer++;
+    if(barTimer%12===0){
+      bars.forEach(b=>{b.th=10+Math.random()*80;});
+    }
+    const bw=W/bars.length;
+    bars.forEach((b,i)=>{
+      b.h+=(b.th-b.h)*b.speed;
+      const x=i*bw;
+      const hh=b.h;
+      const barGrad=ctx.createLinearGradient(0,H,0,H-hh);
+      barGrad.addColorStop(0,'rgba(255,23,68,0.15)');
+      barGrad.addColorStop(0.5,'rgba(124,58,237,0.1)');
+      barGrad.addColorStop(1,'rgba(6,182,212,0.05)');
+      ctx.fillStyle=barGrad;
+      ctx.fillRect(x+0.5,H-hh,bw-1,hh);
+    });
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+
+/* ══════════════════════════════════════════
+   STREAM CARD CANVAS — Animated stream preview
+   Shows: gameplay frames, chat hype meter,
+   waveform audio, and glitch effects
+═══════════════════════════════════════════ */
+(function streamCanvas(){
+  const canvas = document.getElementById('stream-canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  let W,H;
+  function resize(){
+    W=canvas.width=canvas.offsetWidth*1.5;
+    H=canvas.height=canvas.offsetHeight*1.5;
+    canvas.style.width='100%';canvas.style.height='100%';
+  }
+  resize();
+  new ResizeObserver(resize).observe(canvas.parentElement);
+
+  const particles=[];
+  let hype=0,hypeDir=1;
+  const wavePoints=Array.from({length:60},()=>({y:0,vy:0}));
+
+  setInterval(()=>{
+    for(let i=0;i<4;i++){
+      particles.push({x:Math.random()*W,y:H,vx:(Math.random()-.5)*2,vy:-(1+Math.random()*3),r:1+Math.random()*2,alpha:1,color:['255,23,68','124,58,237','6,182,212','245,158,11'][Math.floor(Math.random()*4)]});
+    }
+  },200);
+
+  let t=0;
+  function draw(){
+    t+=0.02;
+    ctx.clearRect(0,0,W,H);
+
+    /* Dark gameplay BG */
+    ctx.fillStyle='#03030f';
+    ctx.fillRect(0,0,W,H);
+
+    /* Animated gradient mesh */
+    const mx1=W*0.3+Math.sin(t)*W*0.2;
+    const my1=H*0.4+Math.cos(t*.7)*H*0.25;
+    const r1=ctx.createRadialGradient(mx1,my1,0,mx1,my1,W*0.45);
+    r1.addColorStop(0,'rgba(124,58,237,0.25)');r1.addColorStop(1,'transparent');
+    ctx.fillStyle=r1;ctx.fillRect(0,0,W,H);
+
+    const mx2=W*0.7+Math.sin(t*.8+1)*W*0.15;
+    const my2=H*0.5+Math.cos(t+0.5)*H*0.2;
+    const r2=ctx.createRadialGradient(mx2,my2,0,mx2,my2,W*0.35);
+    r2.addColorStop(0,'rgba(255,23,68,0.15)');r2.addColorStop(1,'transparent');
+    ctx.fillStyle=r2;ctx.fillRect(0,0,W,H);
+
+    /* Faint grid */
+    ctx.strokeStyle='rgba(124,58,237,0.06)';ctx.lineWidth=0.5;
+    const gs=30;
+    for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+    /* Gameplay placeholder elements */
+    // Fake crosshair
+    const cx=W*0.5+Math.sin(t*0.3)*W*0.05;
+    const cy=H*0.45+Math.cos(t*0.4)*H*0.03;
+    ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(cx-20,cy);ctx.lineTo(cx+20,cy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx,cy-20);ctx.lineTo(cx,cy+20);ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,12,0,Math.PI*2);ctx.stroke();
+
+    // Particles (sparks/particles)
+    for(let i=particles.length-1;i>=0;i--){
+      const p=particles[i];
+      p.x+=p.vx;p.y+=p.vy;p.vy+=0.04;p.alpha-=0.015;
+      if(p.alpha<=0){particles.splice(i,1);continue;}
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${p.color},${p.alpha})`;
+      ctx.fill();
+    }
+
+    /* Waveform audio strip */
+    hype+=0.008*hypeDir;
+    if(hype>1||hype<0.2)hypeDir*=-1;
+    wavePoints.forEach((pt,i)=>{
+      const target=Math.sin(t*3+i*0.4)*H*0.04*hype+Math.sin(t*5+i*0.7)*H*0.02;
+      pt.vy+=(target-pt.y)*0.3;pt.vy*=0.7;pt.y+=pt.vy;
+    });
+    const barW=W/wavePoints.length;
+    const waveY=H*0.8;
+    wavePoints.forEach((pt,i)=>{
+      const bh=Math.abs(pt.y)+2;
+      const wGrad=ctx.createLinearGradient(0,waveY-bh,0,waveY+bh);
+      wGrad.addColorStop(0,'rgba(255,23,68,0.7)');
+      wGrad.addColorStop(0.5,'rgba(124,58,237,0.5)');
+      wGrad.addColorStop(1,'rgba(6,182,212,0.3)');
+      ctx.fillStyle=wGrad;
+      ctx.fillRect(i*barW,waveY-bh,barW-1,bh*2);
+    });
+
+    /* Glitch effect occasional */
+    if(Math.random()<0.015){
+      const gY=Math.random()*H;
+      const gH=2+Math.random()*12;
+      const gShift=(-10+Math.random()*20);
+      ctx.fillStyle='rgba(255,23,68,0.15)';
+      ctx.fillRect(0,gY,W,gH);
+      ctx.save();
+      ctx.globalAlpha=0.14;
+      ctx.drawImage(canvas,0,gY,W,gH,gShift,gY,W,gH);
+      ctx.restore();
+    }
+
+    /* Scanline overlay */
+    for(let y=0;y<H;y+=3){
+      ctx.fillStyle='rgba(0,0,0,0.12)';
+      ctx.fillRect(0,y,W,1);
+    }
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+
+/* ══════════════════════════════════════════
+   WAVEFORM SECTION CANVAS
+═══════════════════════════════════════════ */
+(function waveCanvas(){
+  const canvas=document.getElementById('wave-canvas');
+  const ctx=canvas.getContext('2d');
+  let W,H;
+  function resize(){W=canvas.width=canvas.offsetWidth;H=canvas.height=canvas.offsetHeight;}
+  resize();
+  window.addEventListener('resize',resize);
+
+  let t=0;
+  function draw(){
+    t+=0.02;
+    ctx.clearRect(0,0,W,H);
+
+    const layers=[
+      {amp:H*0.18,freq:0.015,speed:1.2,color:'rgba(255,23,68,',offset:0},
+      {amp:H*0.13,freq:0.022,speed:-.8,color:'rgba(124,58,237,',offset:1},
+      {amp:H*0.1,freq:0.031,speed:1.5,color:'rgba(6,182,212,',offset:2},
+    ];
+
+    layers.forEach((l)=>{
+      ctx.beginPath();
+      for(let x=0;x<=W;x+=2){
+        const y=H/2+Math.sin(x*l.freq+t*l.speed+l.offset)*l.amp+Math.sin(x*l.freq*2.3+t*l.speed*.7)*l.amp*0.4;
+        x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle=l.color+'0.6)';
+      ctx.lineWidth=1.5;ctx.stroke();
+
+      // Fill
+      ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+      const g=ctx.createLinearGradient(0,0,0,H);
+      g.addColorStop(0,l.color+'0.08)');g.addColorStop(1,l.color+'0)');
+      ctx.fillStyle=g;ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+
+/* ══════════════════════════════════════════
+   CTA CANVAS — Particle vortex
+═══════════════════════════════════════════ */
+(function ctaCanvas(){
+  const canvas=document.getElementById('cta-canvas');
+  const ctx=canvas.getContext('2d');
+  let W,H;
+  function resize(){W=canvas.width=canvas.offsetWidth;H=canvas.height=canvas.offsetHeight;}
+  resize();
+  window.addEventListener('resize',resize);
+
+  const stars=Array.from({length:120},()=>({
+    x:Math.random()*2-1,y:Math.random()*2-1,
+    z:Math.random(),size:1+Math.random()*2,
+    color:['255,23,68','124,58,237','6,182,212','255,255,255'][Math.floor(Math.random()*4)]
+  }));
+
+  let t=0;
+  function draw(){
+    t+=0.008;
+    ctx.fillStyle='rgba(2,2,8,0.2)';
+    ctx.fillRect(0,0,W,H);
+
+    const cx=W/2,cy=H/2;
+    stars.forEach(s=>{
+      // Warp effect
+      s.z-=0.003;
+      if(s.z<=0)s.z=1;
+
+      const px=(s.x/s.z)*W/2+cx;
+      const py=(s.y/s.z)*H/2+cy;
+      const r=s.size*(1-s.z)*2;
+      const alpha=1-s.z;
+
+      if(px<0||px>W||py<0||py>H)return;
+
+      ctx.beginPath();
+      ctx.arc(px,py,r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${s.color},${alpha*0.7})`;
+      ctx.fill();
+    });
+
+    // Central glow
+    const gg=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.min(W,H)*0.5);
+    gg.addColorStop(0,'rgba(124,58,237,0.08)');
+    gg.addColorStop(0.5,'rgba(255,23,68,0.04)');
+    gg.addColorStop(1,'transparent');
+    ctx.fillStyle=gg;ctx.fillRect(0,0,W,H);
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+
+/* ─── Mock Dashboard Chart ─── */
+window.addEventListener('load',()=>{
+  const canvas=document.getElementById('mockChart');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  function resize(){canvas.width=canvas.parentElement.clientWidth*2;canvas.height=canvas.parentElement.clientHeight*2;canvas.style.width='100%';canvas.style.height='100%';drawChart();}
+  function drawChart(){
+    const W=canvas.width,H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+    const pts=[];
+    for(let i=0;i<=14;i++)pts.push({x:W/14*i,y:H*0.8-Math.random()*H*0.55-(i>10?H*0.1:0)});
+
+    const grad=ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'rgba(124,58,237,0.35)');grad.addColorStop(1,'rgba(124,58,237,0)');
+
+    ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(pts[0].x,pts[0].y);
+    for(let i=1;i<pts.length-2;i++){const xc=(pts[i].x+pts[i+1].x)/2,yc=(pts[i].y+pts[i+1].y)/2;ctx.quadraticCurveTo(pts[i].x,pts[i].y,xc,yc);}
+    ctx.quadraticCurveTo(pts[pts.length-2].x,pts[pts.length-2].y,pts[pts.length-1].x,pts[pts.length-1].y);
+    ctx.lineTo(W,H);ctx.fillStyle=grad;ctx.fill();
+
+    ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+    for(let i=1;i<pts.length-2;i++){const xc=(pts[i].x+pts[i+1].x)/2,yc=(pts[i].y+pts[i+1].y)/2;ctx.quadraticCurveTo(pts[i].x,pts[i].y,xc,yc);}
+    ctx.quadraticCurveTo(pts[pts.length-2].x,pts[pts.length-2].y,pts[pts.length-1].x,pts[pts.length-1].y);
+    ctx.strokeStyle='#7c3aed';ctx.lineWidth=3;ctx.shadowColor='rgba(124,58,237,0.5)';ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0;
+  }
+  new ResizeObserver(resize).observe(canvas.parentElement);
+  resize();
+  document.querySelectorAll('.feat-card').forEach(card=>{
+    card.style.cursor='pointer';
+    card.addEventListener('click',()=>{ window.location.href='home_dashboard.html'; });
+  });
+  document.querySelectorAll('.p-btn').forEach(button=>{
+    button.addEventListener('click',()=>{ window.location.href='login.html'; });
+  });
+});
+
+/* ─── LIVE VIEWER COUNT ─── */
+const vcEl=document.getElementById('vc');
+const vcBadge=document.getElementById('vc-badge');
+const chatTotalEl=document.getElementById('chat-total');
+const chatReceivedLiveEl=document.getElementById('chat-received-live');
+const waitlistCountEl=document.getElementById('waitlist-count');
+const waitlistForm=document.getElementById('waitlist-form');
+const waitlistStatus=document.getElementById('waitlist-status');
+const demoButtons=Array.from(document.querySelectorAll('.act-btn[data-demo-mode]'));
+const demoQualityEl=document.getElementById('demo-quality');
+const demoHintEl=document.getElementById('demo-hint');
+const miniPrimaryEl=document.getElementById('mini-primary');
+const miniPrimaryLabelEl=document.getElementById('mini-primary-label');
+const miniSecondaryEl=document.getElementById('mini-secondary');
+const miniSecondaryLabelEl=document.getElementById('mini-secondary-label');
+const miniTertiaryEl=document.getElementById('mini-tertiary');
+const miniTertiaryLabelEl=document.getElementById('mini-tertiary-label');
+const miniQuaternaryEl=document.getElementById('mini-quaternary');
+const miniQuaternaryLabelEl=document.getElementById('mini-quaternary-label');
+const chatEl=document.getElementById('chat');
+
+const demoStates={
+  rec:{
+    quality:'4K · 60FPS',
+    hint:'Tap the live demo controls below to preview scenes, alerts, chat, and analytics.',
+    primary:{value:'24.7K',label:'Viewers',tone:'r'},
+    secondary:{value:'+34%',label:'Retention',tone:'g'},
+    tertiary:{value:'68ms',label:'Latency',tone:'b'},
+    quaternary:{value:'$842',label:'This Stream',tone:'o'},
+    messages:[
+      {user:'nova_plays',color:'#ff1744',text:"LET'S GOOO 🔥"},
+      {user:'king_chaos',color:'#a855f7',text:'clutch clutch clutch'},
+      {user:'xgamer99',color:'#06b6d4',text:'POG this setup is insane'},
+      {user:'dreamer',color:'#10b981',text:'this is way faster than my old setup'},
+      {user:'pixel_ninja',color:'#f59e0b',text:'that latency is nasty'}
+    ]
+  },
+  scenes:{
+    quality:'3 Scenes · Ready',
+    hint:'Scene switching is instant in the demo too. Try another panel to keep exploring.',
+    primary:{value:'03',label:'Live Scenes',tone:'r'},
+    secondary:{value:'12',label:'Hotkeys',tone:'g'},
+    tertiary:{value:'0.2s',label:'Switch Time',tone:'b'},
+    quaternary:{value:'2.1GB',label:'Media Cache',tone:'o'},
+    messages:[
+      {user:'studio_bot',color:'#ff1744',text:'Gameplay scene pushed to all platforms'},
+      {user:'overlay_sync',color:'#a855f7',text:'Sponsor bumper armed for next break'},
+      {user:'scene_director',color:'#06b6d4',text:'BRB scene is preloaded and ready'},
+      {user:'chat_ops',color:'#10b981',text:'Countdown overlay synced in 120ms'},
+      {user:'media_bus',color:'#f59e0b',text:'Clip source switched without frame drop'}
+    ]
+  },
+  alerts:{
+    quality:'Alerts · Synced',
+    hint:'Alert events now respond instantly instead of being decorative.',
+    primary:{value:'148',label:'Alerts Fired',tone:'r'},
+    secondary:{value:'$2.4K',label:'Tips Today',tone:'g'},
+    tertiary:{value:'17',label:'Gift Trains',tone:'b'},
+    quaternary:{value:'99.4%',label:'Delivery',tone:'o'},
+    messages:[
+      {user:'super_chat',color:'#ff1744',text:'Milo tipped $50: keep the grind alive'},
+      {user:'gift_train',color:'#a855f7',text:'14 gifted subs rolling through Twitch'},
+      {user:'raid_alert',color:'#06b6d4',text:'Kick raid incoming with 1.8K viewers'},
+      {user:'sponsor_drop',color:'#10b981',text:'Code redemption spike detected'},
+      {user:'goal_meter',color:'#f59e0b',text:'Membership goal is 92% full'}
+    ]
+  },
+  chat:{
+    quality:'Unified Chat · 3 Sources',
+    hint:'This mode speeds the feed up so you can feel the merged Twitch, Kick, and YouTube chat flow.',
+    primary:{value:'286',label:'Chats / Min',tone:'r'},
+    secondary:{value:'03',label:'Sources',tone:'g'},
+    tertiary:{value:'12',label:'Pinned Msgs',tone:'b'},
+    quaternary:{value:'4ms',label:'Merge Delay',tone:'o'},
+    messages:[
+      {user:'twitch_mod',color:'#a855f7',text:'twitch chat is flying right now'},
+      {user:'kick_hype',color:'#10b981',text:'kick gang checking in'},
+      {user:'yt_live',color:'#ff1744',text:'youtube replay markers look clean'},
+      {user:'nova_plays',color:'#06b6d4',text:'all chats in one place feels unfair'},
+      {user:'void_rx',color:'#f472b6',text:'this feed is finally keeping up'}
+    ]
+  },
+  analytics:{
+    quality:'Analytics · Live',
+    hint:'Metrics switch in real time when you jump into analytics mode.',
+    primary:{value:'87%',label:'Engagement',tone:'r'},
+    secondary:{value:'31m',label:'Watch Time',tone:'g'},
+    tertiary:{value:'12.8%',label:'CTR',tone:'b'},
+    quaternary:{value:'+127%',label:'Growth',tone:'o'},
+    messages:[
+      {user:'engagement_ai',color:'#ff1744',text:'hype spike detected during final fight'},
+      {user:'growth_map',color:'#a855f7',text:'YouTube conversion is leading this hour'},
+      {user:'retention_loop',color:'#06b6d4',text:'watch-time rose after scene swap'},
+      {user:'revenue_mix',color:'#10b981',text:'Kick donations outperforming baseline'},
+      {user:'clip_engine',color:'#f59e0b',text:'top clip candidate scored 94/100'}
+    ]
+  }
+};
+
+let activeDemoMode='rec';
+let chatTotal=1284200;
+let chatTimer;
+let waitlistCount=Number(localStorage.getItem('secondchat-waitlist-count'));
+if(!Number.isFinite(waitlistCount) || waitlistCount<4218)waitlistCount=4218;
+
+function formatMetric(value){
+  if(value>=1000000){
+    return `${(value/1000000).toFixed(value>=10000000?1:2).replace(/\.0$/, '').replace(/(\.\d)0$/, '$1')}M`;
+  }
+  if(value>=1000){
+    return `${(value/1000).toFixed(value>=100000?0:1).replace(/\.0$/, '')}K`;
+  }
+  return String(value);
+}
+
+function updateChatTotal(){
+  if(chatTotalEl)chatTotalEl.textContent=formatMetric(chatTotal);
+  if(chatReceivedLiveEl)chatReceivedLiveEl.textContent=chatTotal.toLocaleString();
+}
+
+function updateWaitlistCount(){
+  if(waitlistCountEl)waitlistCountEl.innerHTML=`${waitlistCount.toLocaleString()}<span> creators queued</span>`;
+}
+
+function setMiniStat(valueEl,labelEl,config){
+  if(!valueEl||!labelEl||!config)return;
+  valueEl.textContent=config.value;
+  valueEl.className=`mini-val ${config.tone}`;
+  labelEl.textContent=config.label;
+}
+
+function appendChatMessage(message,animate){
+  if(!chatEl||!message)return;
+  const el=document.createElement('div');
+  el.className='chat-msg';
+  if(animate){
+    el.style.opacity='0';
+    el.style.transform='translateY(6px)';
+    el.style.transition='all .2s ease';
+  }
+  el.innerHTML=`<span class="chat-user" style="color:${message.color}">${message.user}</span><span class="chat-text">${message.text}</span>`;
+  chatEl.appendChild(el);
+  if(animate){
+    requestAnimationFrame(()=>{
+      el.style.opacity='1';
+      el.style.transform='none';
+    });
+  }
+  while(chatEl.children.length>5)chatEl.removeChild(chatEl.firstChild);
+}
+
+function renderChatMessages(messages){
+  if(!chatEl)return;
+  chatEl.innerHTML='';
+  messages.forEach(message=>appendChatMessage(message,false));
+}
+
+function scheduleChatLoop(){
+  window.clearTimeout(chatTimer);
+  const delays={rec:700,scenes:900,alerts:820,chat:420,analytics:760};
+  const delay=delays[activeDemoMode]||1300;
+  chatTimer=window.setTimeout(()=>{
+    const messages=demoStates[activeDemoMode].messages;
+    const nextMessage=messages[Math.floor(Math.random()*messages.length)];
+    appendChatMessage(nextMessage,true);
+    chatTotal+=18+Math.floor(Math.random()*54);
+    updateChatTotal();
+    scheduleChatLoop();
+  },delay);
+}
+
+function setDemoMode(mode){
+  const state=demoStates[mode]||demoStates.rec;
+  activeDemoMode=mode;
+  if(demoQualityEl)demoQualityEl.textContent=state.quality;
+  if(demoHintEl)demoHintEl.textContent=state.hint;
+  setMiniStat(miniPrimaryEl,miniPrimaryLabelEl,state.primary);
+  setMiniStat(miniSecondaryEl,miniSecondaryLabelEl,state.secondary);
+  setMiniStat(miniTertiaryEl,miniTertiaryLabelEl,state.tertiary);
+  setMiniStat(miniQuaternaryEl,miniQuaternaryLabelEl,state.quaternary);
+  renderChatMessages(state.messages);
+  demoButtons.forEach(button=>{
+    const isActive=button.dataset.demoMode===mode;
+    button.classList.toggle('active',isActive);
+    button.setAttribute('aria-pressed',String(isActive));
+  });
+  scheduleChatLoop();
+}
+
+demoButtons.forEach(button=>{
+  button.addEventListener('click',()=>setDemoMode(button.dataset.demoMode));
+});
+
+setInterval(()=>{
+  const n=(24.7+(Math.random()*.5-.25)).toFixed(1);
+  if(vcEl)vcEl.innerText=n+'K';
+  if(miniPrimaryEl&&activeDemoMode==='rec')miniPrimaryEl.innerText=n+'K';
+  if(vcBadge)vcBadge.innerText=n;
+},1800);
+
+if(waitlistForm){
+  waitlistForm.addEventListener('submit',event=>{
+    event.preventDefault();
+    const email=document.getElementById('waitlist-email').value.trim();
+    const platform=document.getElementById('waitlist-platform').value;
+    const channel=document.getElementById('waitlist-channel').value;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      waitlistStatus.dataset.state='error';
+      waitlistStatus.textContent='Enter a valid email address to save your spot.';
+      return;
+    }
+    waitlistCount+=1;
+    localStorage.setItem('secondchat-waitlist-count',String(waitlistCount));
+    const leads=JSON.parse(localStorage.getItem('secondchat-waitlist-leads')||'[]');
+    leads.push({email,platform,channel,joinedAt:new Date().toISOString()});
+    localStorage.setItem('secondchat-waitlist-leads',JSON.stringify(leads.slice(-50)));
+    updateWaitlistCount();
+    waitlistStatus.dataset.state='success';
+    waitlistStatus.textContent=`You're in. ${platform} / ${channel} onboarding invites will go to ${email} when your wave opens.`;
+    waitlistForm.reset();
+  });
+}
+
+updateChatTotal();
+updateWaitlistCount();
+setDemoMode(activeDemoMode);
+</script>
+</body>
+</html>

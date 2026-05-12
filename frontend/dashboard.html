@@ -41,6 +41,13 @@
       </button>
     </div>
 
+    <div class="nav-section">
+      <div class="nav-label">Quality</div>
+      <button class="nav-item" data-section="quality">
+        <i class="fa-solid fa-sliders icon"></i> Stream Quality
+      </button>
+    </div>
+
     <div class="sidebar-footer">
       <div style="display:flex;align-items:center;gap:8px;padding:8px;color:var(--muted);font-size:.8rem;">
         <span class="ws-dot" id="wsIndicator"></span>
@@ -470,6 +477,131 @@
         </div>
       </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SECTION: Stream Quality                                               -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="section-quality" class="section">
+
+      <div class="two-col">
+
+        <!-- ─────────────────────────────────────────────────────── -->
+        <!-- Audio                                                              -->
+        <!-- ─────────────────────────────────────────────────────── -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-volume-high"></i> Audio Processing</h3>
+          </div>
+          <p style="color:var(--muted);font-size:.82rem;margin-bottom:16px;">
+            Apply server-side FFmpeg audio filters before pushing to platforms.
+            Reduces background noise, room rumble, and uneven volume levels.
+          </p>
+
+          <!-- Toggle -->
+          <div class="toggle-row" style="padding-top:0;margin-bottom:16px;">
+            <div class="label-col">
+              <strong>Enable Audio Processing</strong>
+              <span>Re-encode audio with noise reduction &amp; compression</span>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="audioProcessing"
+                     onchange="toggleAudioOptions(this.checked)"/>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Options (shown when enabled) -->
+          <div id="audioOptions" style="display:none;">
+            <div class="form-group" style="margin-bottom:18px;">
+              <label>Noise Reduction Strength</label>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
+                <input type="range" id="noiseFloorDb" min="10" max="40" value="25"
+                       style="flex:1;"
+                       oninput="document.getElementById('noiseFloorLabel').textContent = this.value + ' dB'"/>
+                <span id="noiseFloorLabel"
+                      style="min-width:54px;text-align:right;color:var(--accent);font-weight:600;">25 dB</span>
+              </div>
+              <small style="color:var(--muted);display:block;margin-top:6px;">
+                Higher = more aggressive removal. Recommended: 20–30 dB for typical home/office noise.
+              </small>
+            </div>
+
+            <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;
+                        padding:12px;font-size:.82rem;color:var(--muted);margin-bottom:4px;">
+              <strong style="color:var(--text);">Filter chain applied:</strong>
+              <ul style="margin:6px 0 0 16px;line-height:1.9;">
+                <li><code>highpass=f=80</code> – Remove low-frequency rumble (&lt; 80 Hz)</li>
+                <li><code>afftdn</code> – FFT-based stationary noise suppression</li>
+                <li><code>agate</code> – Noise gate (mutes near-silence passages)</li>
+                <li><code>acompressor</code> – Dynamic compression (even loudness)</li>
+                <li><code>alimiter</code> – Peak limiter (prevents clipping)</li>
+              </ul>
+              <div style="margin-top:8px;color:var(--warn);">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Audio will be re-encoded to <strong>AAC 160 kbps / 44.1 kHz</strong> instead of copied.
+                Echo from your room should be handled in OBS (Noise Suppression filter).
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="margin-top:16px;" onclick="saveQualitySettings()">
+            <i class="fa-solid fa-floppy-disk"></i> Save Audio Settings
+          </button>
+        </div>
+
+        <!-- ─────────────────────────────────────────────────────── -->
+        <!-- Video                                                              -->
+        <!-- ─────────────────────────────────────────────────────── -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-video"></i> Video Quality</h3>
+          </div>
+          <p style="color:var(--muted);font-size:.82rem;margin-bottom:16px;">
+            <strong>Source</strong> passes through exactly what OBS sends — best quality, zero CPU.
+            Other presets re-encode to a fixed resolution/bitrate; useful when your OBS bitrate
+            exceeds a platform's cap.
+          </p>
+
+          <div class="form-group" style="margin-bottom:16px;">
+            <label>Quality Preset</label>
+            <select id="videoQuality" onchange="updateVideoPresetInfo(this.value)"
+                    style="max-width:300px;margin-top:6px;">
+              <option value="source">Source — pass-through (no re-encode)</option>
+              <option value="1080p60">1080p 60 fps — 6,000 kbps</option>
+              <option value="1080p30">1080p 30 fps — 4,500 kbps</option>
+              <option value="720p60">720p  60 fps — 4,000 kbps</option>
+              <option value="720p30">720p  30 fps — 2,500 kbps</option>
+              <option value="480p30">480p  30 fps — 1,500 kbps</option>
+            </select>
+          </div>
+
+          <!-- Preset detail card -->
+          <div id="videoPresetInfo"
+               style="display:none;background:var(--card2);border:1px solid var(--border);
+                      border-radius:8px;padding:12px;font-size:.82rem;color:var(--muted);margin-bottom:16px;">
+          </div>
+
+          <!-- Platform limits reference -->
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;
+                      padding:12px;font-size:.82rem;color:var(--muted);">
+            <strong style="color:var(--text);">Platform bitrate caps:</strong>
+            <ul style="margin:6px 0 0 16px;line-height:1.9;">
+              <li><span style="color:var(--twitch);"><i class="fa-brands fa-twitch"></i> Twitch</span>
+                  : 6,000 kbps (Partners) &nbsp;/&nbsp; 3,500 kbps (Others)</li>
+              <li><span style="color:var(--kick);"><i class="fa-solid fa-bolt"></i> Kick</span>
+                  : ~12,000 kbps</li>
+              <li><span style="color:var(--youtube);"><i class="fa-brands fa-youtube"></i> YouTube</span>
+                  : up to 51,000 kbps</li>
+            </ul>
+          </div>
+
+          <button class="btn btn-primary" style="margin-top:16px;" onclick="saveQualitySettings()">
+            <i class="fa-solid fa-floppy-disk"></i> Save Video Settings
+          </button>
+        </div>
+
+      </div><!-- /.two-col -->
+    </div><!-- /#section-quality -->
 
   </main>
 </div>

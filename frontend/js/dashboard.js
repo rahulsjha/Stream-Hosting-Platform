@@ -51,12 +51,14 @@ function navigate(section) {
     ingest:       'Ingest Keys',
     sessions:     'Session History',
     'anti-scuff': 'BRB / Stream Health',
+    quality:      'Stream Quality',
   };
   document.getElementById('pageTitle').textContent = titles[section] || section;
 
   if (section === 'sessions')   loadSessions();
   if (section === 'anti-scuff') loadBRBInfo();
   if (section === 'ingest')     loadIngestInfo();
+  if (section === 'quality')    loadQualitySettings();
 }
 
 // ── API helper ────────────────────────────────────────────────────────────────
@@ -412,6 +414,87 @@ async function endStreamNow() {
     loadProfile();
   } catch (err) {
     toast('End failed: ' + err.message, 'error');
+  }
+}
+
+// ── Stream Quality ────────────────────────────────────────────────────────────
+
+async function loadQualitySettings() {
+  try {
+    const q = await api('GET', '/api/users/quality');
+    if (!q) return;
+
+    const audioEl = document.getElementById('audioProcessing');
+    const nfEl    = document.getElementById('noiseFloorDb');
+    const nfLabel = document.getElementById('noiseFloorLabel');
+    const vqEl    = document.getElementById('videoQuality');
+
+    if (audioEl) {
+      audioEl.checked = !!q.audio_processing;
+      toggleAudioOptions(!!q.audio_processing);
+    }
+    if (nfEl && nfLabel) {
+      nfEl.value = q.audio_noise_floor_db || 25;
+      nfLabel.textContent = (q.audio_noise_floor_db || 25) + ' dB';
+    }
+    if (vqEl) {
+      vqEl.value = q.video_quality || 'source';
+      updateVideoPresetInfo(q.video_quality || 'source');
+    }
+  } catch (err) {
+    console.error('loadQualitySettings:', err);
+  }
+}
+
+function toggleAudioOptions(enabled) {
+  const opts = document.getElementById('audioOptions');
+  if (opts) opts.style.display = enabled ? 'block' : 'none';
+}
+
+function updateVideoPresetInfo(preset) {
+  const info = document.getElementById('videoPresetInfo');
+  if (!info) return;
+
+  const map = {
+    'source':  null,
+    '1080p60': { res: '1920×1080', fps: 60, bv: 6000, note: 'Great quality — requires a fast CPU for re-encoding.' },
+    '1080p30': { res: '1920×1080', fps: 30, bv: 4500, note: 'Good for most platforms; lower CPU than 60fps.' },
+    '720p60':  { res: '1280×720',  fps: 60, bv: 4000, note: 'Smooth 60fps with moderate bitrate.' },
+    '720p30':  { res: '1280×720',  fps: 30, bv: 2500, note: 'Recommended for Twitch (non-partner cap).' },
+    '480p30':  { res: '854×480',   fps: 30, bv: 1500, note: 'Low bandwidth — suitable for slow uploads / mobile.' },
+  };
+
+  const p = map[preset];
+  if (!p) { info.style.display = 'none'; return; }
+
+  info.style.display = 'block';
+  info.innerHTML = `
+    <strong style="color:var(--text);">Re-encodes to:</strong>
+    ${p.res} @ ${p.fps} fps &nbsp;—&nbsp; ${p.bv.toLocaleString()} kbps video<br/>
+    <em style="color:var(--accent);">${p.note}</em>
+    <div style="margin-top:8px;color:var(--warn);">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      Re-encoding uses server CPU. <strong>Source</strong> is recommended
+      if your OBS settings already meet the platform's bitrate cap.
+    </div>
+  `;
+}
+
+async function saveQualitySettings() {
+  const audioEl = document.getElementById('audioProcessing');
+  const nfEl    = document.getElementById('noiseFloorDb');
+  const vqEl    = document.getElementById('videoQuality');
+  if (!audioEl || !nfEl || !vqEl) return;
+
+  try {
+    await api('PUT', '/api/users/quality', {
+      audio_processing:     audioEl.checked,
+      audio_noise_floor_db: parseInt(nfEl.value, 10) || 25,
+      video_quality:        vqEl.value,
+    });
+    toast('Quality settings saved! Changes apply on your next stream.', 'success');
+  } catch (err) {
+    toast('Save failed: ' + err.message, 'error');
   }
 }
 
