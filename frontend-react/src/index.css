@@ -1,0 +1,75 @@
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Syne', system-ui, -apple-system, sans-serif;
+  background: #020208;
+  color: #f1efff;
+  overflow-x: hidden;
+}
+
+:root {
+  --bg: #020208;
+  --bg1: #050510;
+  --bg2: #080818;
+  --surface: #0c0c1e;
+  --surface2: #101028;
+  --red: #ff1744;
+  --redglow: rgba(255,23,68,0.35);
+  --violet: #7c3aed;
+  --violet2: #a855f7;
+  --cyan: #06b6d4;
+  --gold: #f59e0b;
+  --green: #10b981;
+  --text: #f1efff;
+  --muted: #64617a;
+  --dim: #242238;
+  --border: rgba(124,58,237,0.15);
+  --border2: rgba(255,23,68,0.2);
+  --glass: rgba(12,12,30,0.75);
+  --glass2: rgba(255,255,255,0.03);
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Dashboard theme */
+:root {
+  --dash-bg: #0d0f14;
+  --dash-card: #161920;
+  --dash-card2: #1d2028;
+  --dash-border: #2a2e38;
+  --dash-accent: #00e5a0;
+  --dash-accent2: #7c5cfc;
+  --dash-danger: #ff4757;
+  --dash-warn: #ffa502;
+  --dash-info: #1e90ff;
+  --dash-text: #e8eaf0;
+  --dash-muted: #6b7280;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+input, textarea, select {
+  font: inherit;
+  color: inherit;
+}
