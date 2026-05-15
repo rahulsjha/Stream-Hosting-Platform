@@ -72,13 +72,13 @@ PORT=3000
 DATABASE_URL=postgresql://user:password@localhost:5432/sil_hosting
 JWT_SECRET=your_secret_key
 SERVER_PUBLIC_IP=localhost
-CORS_ORIGIN=http://https://sil-api-811882866295.us-central1.run.app
+CORS_ORIGIN=https://sil-api-811882866295.us-central1.run.app
 ```
 
 **Frontend:** `frontend-react/.env.local`
 ```env
-REACT_APP_API_URL=http://https://sil-api-811882866295.us-central1.run.app/api
-REACT_APP_WS_URL=ws://https://sil-api-811882866295.us-central1.run.app
+REACT_APP_API_URL=https://sil-api-811882866295.us-central1.run.app/api
+REACT_APP_WS_URL=wss://sil-api-811882866295.us-central1.run.app
 ```
 
 ---

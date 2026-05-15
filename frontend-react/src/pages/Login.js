@@ -42,10 +42,7 @@ const Login = () => {
       {/* Navigation */}
       <nav className="auth-nav">
         <Link to="/" className="auth-nav-logo">
-          <div className="auth-nav-logo-icon">
-            <i className="fas fa-tower-broadcast"></i>
-          </div>
-          <span className="auth-nav-logo-text">SIL</span>
+          <img src="/assets/logo.png" alt="SIL" className="auth-nav-logo-img" />
         </Link>
 
         <div className="nav-right">
@@ -62,10 +59,7 @@ const Login = () => {
         <div className="auth-panel-left">
           <div className="panel-brand">
             <Link to="/" className="panel-logo">
-              <div className="panel-logo-icon">
-                <i className="fas fa-tower-broadcast"></i>
-              </div>
-              <div className="panel-logo-text">SIL</div>
+              <img src="/assets/logo.png" alt="SIL" className="panel-logo-img" />
             </Link>
 
             <h2 className="panel-headline">

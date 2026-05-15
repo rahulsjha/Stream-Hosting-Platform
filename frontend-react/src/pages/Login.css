@@ -149,6 +149,15 @@ body:has(button:hover) #auth-cur-ring {
   color: var(--text);
 }
 
+/* Logo image used in auth nav */
+.auth-nav-logo-img {
+  width: 120px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  padding-top: 6px; /* keep it from overlapping the top nav */
+}
+
 .nav-right {
   display: flex;
   align-items: center;
@@ -281,6 +290,13 @@ body:has(button:hover) #auth-cur-ring {
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Panel logo image */
+.panel-logo-img {
+  width: 140px;
+  height: auto;
+  object-fit: contain;
 }
 
 .panel-headline {

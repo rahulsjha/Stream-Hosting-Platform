@@ -109,6 +109,7 @@ body:has(button:hover) #cur-ring {
   height: auto;
   display: block;
   object-fit: contain;
+  padding-top: 8px; /* prevent overlapping the top nav */
 }
 
 .nav-links {
