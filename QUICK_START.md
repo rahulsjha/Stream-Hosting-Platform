@@ -16,7 +16,7 @@ npm install  # Only first time
 npm start
 ```
 
-**Done!** Open http://localhost:3000 in your browser.
+**Done!** Open http://https://sil-api-811882866295.us-central1.run.app in your browser.
 
 ---
 
@@ -72,13 +72,13 @@ PORT=3000
 DATABASE_URL=postgresql://user:password@localhost:5432/sil_hosting
 JWT_SECRET=your_secret_key
 SERVER_PUBLIC_IP=localhost
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://https://sil-api-811882866295.us-central1.run.app
 ```
 
 **Frontend:** `frontend-react/.env.local`
 ```env
-REACT_APP_API_URL=http://localhost:3000/api
-REACT_APP_WS_URL=ws://localhost:3000
+REACT_APP_API_URL=http://https://sil-api-811882866295.us-central1.run.app/api
+REACT_APP_WS_URL=ws://https://sil-api-811882866295.us-central1.run.app
 ```
 
 ---
@@ -124,7 +124,7 @@ npm start
 **API requests failing**
 ```bash
 # Check:
-1. Backend running? curl http://localhost:3000/health
+1. Backend running? curl http://https://sil-api-811882866295.us-central1.run.app/health
 2. Token exists? localStorage.getItem('sil_token')
 3. CORS configured? backend/.env CORS_ORIGIN set
 ```
@@ -232,7 +232,7 @@ Want to add more? Easy:
 
 ```bash
 npm start
-# Go to http://localhost:3000
+# Go to http://https://sil-api-811882866295.us-central1.run.app
 # Start streaming! 🚀
 ```
 

@@ -28,6 +28,7 @@ require('dotenv').config();
 // Ignore it so the server doesn't crash.
 try { process.stdin.on('error', () => {}); } catch {}
 
+const fs         = require('fs');
 const express    = require('express');
 const http       = require('http');
 const path       = require('path');
@@ -45,6 +46,7 @@ const authRoutes   = require('./routes/auth');
 const userRoutes   = require('./routes/users');
 const adminRoutes  = require('./routes/admin');
 const mediaRoutes  = require('./routes/media');
+const waitlistRoutes = require('./routes/waitlist');
 
 // Services
 const streamHealth = require('./services/streamHealth');
@@ -66,13 +68,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ── Serve frontend ────────────────────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, '../frontend')));
+const frontendDir = path.join(__dirname, '../frontend');
+const frontendIndex = path.join(frontendDir, 'index.html');
+const hasFrontend = fs.existsSync(frontendIndex);
+
+if (hasFrontend) {
+  app.use(express.static(frontendDir));
+}
 
 // ── API routes ────────────────────────────────────────────────────────────────
 app.use('/',           authRoutes);   // POST /rtmp/auth  /rtmp/done  /srt/auth  /srt/done
 app.use('/api/users',  userRoutes);   // POST /register /login  GET /:username  etc.
 app.use('/api/admin',  adminRoutes);  // GET /stats /streams /users  PATCH /users/:u  …
 app.use('/api/media',  mediaRoutes);  // POST|DELETE|GET /api/media/brb
+app.use('/api/waitlist', waitlistRoutes); // POST /api/waitlist  GET /api/waitlist/count
 
 // ── Health ────────────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) =>
@@ -80,9 +89,18 @@ app.get('/health', (_req, res) =>
 );
 
 // ── SPA catch-all ─────────────────────────────────────────────────────────────
-app.get('*', (_req, res) =>
-  res.sendFile(path.join(__dirname, '../frontend/index.html'))
-);
+if (hasFrontend) {
+  app.get('*', (_req, res) =>
+    res.sendFile(frontendIndex)
+  );
+} else {
+  app.get('/', (_req, res) =>
+    res.json({ status: 'online', service: 'sil-api', frontend: 'not bundled' })
+  );
+  app.use((_req, res) =>
+    res.status(404).json({ error: 'Not found' })
+  );
+}
 
 // ── Global error handler ──────────────────────────────────────────────────────
 // eslint-disable-next-line no-unused-vars

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://https://sil-api-811882866295.us-central1.run.app/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE,

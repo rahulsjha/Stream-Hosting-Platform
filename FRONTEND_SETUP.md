@@ -16,7 +16,7 @@ PORT=3000
 DATABASE_URL=postgresql://user:password@localhost:5432/sil_hosting
 JWT_SECRET=your_secret_key_here
 SERVER_PUBLIC_IP=localhost
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://https://sil-api-811882866295.us-central1.run.app
 EOF
 ```
 
@@ -29,8 +29,8 @@ npm install
 ### 4. Create Frontend .env
 ```bash
 cat > frontend-react/.env.local << 'EOF'
-REACT_APP_API_URL=http://localhost:3000/api
-REACT_APP_WS_URL=ws://localhost:3000
+REACT_APP_API_URL=http://https://sil-api-811882866295.us-central1.run.app/api
+REACT_APP_WS_URL=ws://https://sil-api-811882866295.us-central1.run.app
 EOF
 ```
 
@@ -48,7 +48,7 @@ cd frontend-react
 npm start
 ```
 
-✅ Done! Open http://localhost:3000
+✅ Done! Open http://https://sil-api-811882866295.us-central1.run.app
 
 ---
 
@@ -129,7 +129,7 @@ frontend-react/
 
 ### Register/Login
 ```bash
-1. Go to http://localhost:3000
+1. Go to http://https://sil-api-811882866295.us-central1.run.app
 2. Click "Get Started Free" → Register with email/password
 3. OR Click "Sign In" if already registered
 4. Redirects to /dashboard
@@ -185,20 +185,20 @@ frontend-react/
 
 ### Check if Backend is Running
 ```bash
-curl http://localhost:3000/health
+curl http://https://sil-api-811882866295.us-central1.run.app/health
 # Should return: {"status":"online","version":"4.1.0","uptime":...}
 ```
 
 ### Check if Frontend is Running
 ```bash
-# Open browser: http://localhost:3000
+# Open browser: http://https://sil-api-811882866295.us-central1.run.app
 # Check DevTools Console for errors
 ```
 
 ### Check API Connection
 ```bash
 # In browser console:
-fetch('http://localhost:3000/api/users/me', {
+fetch('http://https://sil-api-811882866295.us-central1.run.app/api/users/me', {
   headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sil_token') }
 }).then(r => r.json()).then(console.log)
 ```

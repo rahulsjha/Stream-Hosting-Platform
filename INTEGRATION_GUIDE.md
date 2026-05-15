@@ -33,7 +33,7 @@ PORT=3000
 DATABASE_URL=postgresql://user:password@localhost:5432/sil_hosting
 JWT_SECRET=your_jwt_secret_key_here_change_this
 SERVER_PUBLIC_IP=localhost
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://https://sil-api-811882866295.us-central1.run.app
 ```
 
 ### 3. Initialize Database
@@ -56,7 +56,7 @@ npm run dev:api
 npm start
 ```
 
-Backend will run on `http://localhost:3000`
+Backend will run on `http://https://sil-api-811882866295.us-central1.run.app`
 
 ---
 
@@ -74,8 +74,8 @@ npm install
 Create `frontend-react/.env.local`:
 
 ```env
-REACT_APP_API_URL=http://localhost:3000/api
-REACT_APP_WS_URL=ws://localhost:3000
+REACT_APP_API_URL=http://https://sil-api-811882866295.us-central1.run.app/api
+REACT_APP_WS_URL=ws://https://sil-api-811882866295.us-central1.run.app
 ```
 
 ### 3. Start React Development Server
@@ -84,7 +84,7 @@ REACT_APP_WS_URL=ws://localhost:3000
 npm start
 ```
 
-Frontend will open at `http://localhost:3000` in your browser with hot reload.
+Frontend will open at `http://https://sil-api-811882866295.us-central1.run.app` in your browser with hot reload.
 
 ---
 
@@ -124,7 +124,7 @@ This will start:
 
 ### 1. Test Registration
 
-1. Navigate to `http://localhost:3000`
+1. Navigate to `http://https://sil-api-811882866295.us-central1.run.app`
 2. Click "Get Started Free"
 3. Fill in username, email, password
 4. Click "Create Account"
@@ -188,7 +188,7 @@ This will start:
 ### 4. Test Protected Routes
 
 1. In browser devtools, run: `localStorage.clear()`
-2. Go to `http://localhost:3000/dashboard`
+2. Go to `http://https://sil-api-811882866295.us-central1.run.app/dashboard`
 3. You should be redirected to `/login`
 
 **What happens:**
@@ -266,13 +266,13 @@ Stream-Hosting-Platform/
 
 ### "Cannot connect to backend"
 
-1. Check backend is running: `http://localhost:3000/health`
+1. Check backend is running: `http://https://sil-api-811882866295.us-central1.run.app/health`
 2. Verify `REACT_APP_API_URL` in `.env.local`
 3. Check CORS is enabled in backend `.env`
 
 ```bash
 # Backend .env
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://https://sil-api-811882866295.us-central1.run.app
 ```
 
 ### "Database connection failed"

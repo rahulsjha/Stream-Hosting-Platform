@@ -267,7 +267,7 @@ cd frontend-react && npm start
 
 **Browser:**
 ```
-http://localhost:3000
+http://https://sil-api-811882866295.us-central1.run.app
 ```
 
 ### First Run Setup
@@ -475,7 +475,7 @@ cd frontend-react && npm start    # Foreground
 
 ### View Application
 ```
-Open browser: http://localhost:3000
+Open browser: http://https://sil-api-811882866295.us-central1.run.app
 ```
 
 ### Test Registration

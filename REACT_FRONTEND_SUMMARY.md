@@ -363,7 +363,7 @@ npm run build
 ## 🧪 Testing Your Setup
 
 ### Step 1: Register
-1. Go to http://localhost:3000
+1. Go to http://https://sil-api-811882866295.us-central1.run.app
 2. Click "Get Started Free"
 3. Create account with username, email, password
 4. Verify you land on dashboard
@@ -422,7 +422,7 @@ Edit CSS variables in `src/index.css`
 | Issue | Cause | Solution |
 |-------|-------|----------|
 | Port 3000 in use | Another app using port | `lsof -ti :3000 \| xargs kill -9` |
-| CORS error | Backend not configured | Set `CORS_ORIGIN=http://localhost:3000` in backend .env |
+| CORS error | Backend not configured | Set `CORS_ORIGIN=http://https://sil-api-811882866295.us-central1.run.app` in backend .env |
 | Token not saving | localStorage disabled | Check browser settings |
 | 401 on every request | JWT secret mismatch | Ensure same secret in backend |
 | Blank page | Build issue | Clear cache: `npm cache clean --force` |
@@ -543,6 +543,6 @@ npm install
 npm start
 ```
 
-Then open http://localhost:3000
+Then open http://https://sil-api-811882866295.us-central1.run.app
 
 **Happy streaming!** 🚀

@@ -102,7 +102,7 @@ docker-compose up -d
 ```
 
 Services started:
-- `sil-api`      → http://localhost:3000
+- `sil-api`      → http://https://sil-api-811882866295.us-central1.run.app
 - `nginx-rtmp`   → rtmp://localhost:1935/live (RTMP ingest)
 - `mediamtx`     → srt://localhost:9999 (SRT ingest)
 
@@ -327,7 +327,7 @@ When a user provisions an OBS VM, SIL:
 
 **Enable VM for a user (Admin):**
 ```bash
-curl -X PATCH http://localhost:3000/api/admin/users/alice \
+curl -X PATCH http://https://sil-api-811882866295.us-central1.run.app/api/admin/users/alice \
   -H "x-admin-secret: YOUR_ADMIN_SECRET" \
   -H "Content-Type: application/json" \
   -d '{"vm_enabled": true, "plan": "pro"}'

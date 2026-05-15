@@ -329,6 +329,25 @@
   margin-bottom: 24px;
 }
 
+  /* Two column layout used in overview */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .ws-feed {
+    height: 120px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--dash-muted);
+    background: #0a0c10;
+    border-radius: 6px;
+    padding: 10px;
+  }
+
 .stat-card {
   background: var(--dash-card);
   border: 1px solid var(--dash-border);

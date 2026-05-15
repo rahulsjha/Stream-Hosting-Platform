@@ -100,7 +100,7 @@ Stream-Hosting-Platform/
 1. Read: [QUICK_START.md](QUICK_START.md) (1 min)
 2. Run: `npm run dev:api` (backend)
 3. Run: `npm start` (frontend)
-4. Open: http://localhost:3000 ✅
+4. Open: http://https://sil-api-811882866295.us-central1.run.app ✅
 
 **Time: 2 minutes**
 
@@ -145,7 +145,7 @@ Stream-Hosting-Platform/
 - [ ] `cd frontend-react && npm install`
 - [ ] Create `frontend-react/.env.local` with REACT_APP_API_URL
 - [ ] Run `npm start`
-- [ ] Verify http://localhost:3000 opens
+- [ ] Verify http://https://sil-api-811882866295.us-central1.run.app opens
 
 ### Testing
 - [ ] Register new account
@@ -234,7 +234,7 @@ npm install
 ## 🐛 Troubleshooting by Symptom
 
 ### "Cannot connect to backend"
-- Check backend running: `curl http://localhost:3000/health`
+- Check backend running: `curl http://https://sil-api-811882866295.us-central1.run.app/health`
 - Check `.env.local` has correct API_URL
 - See [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md#troubleshooting)
 

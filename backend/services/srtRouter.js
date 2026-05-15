@@ -9,8 +9,8 @@
  * MediaMTX webhook config (mediamtx.yml):
  *   paths:
  *     all_others:
- *       runOnPublish:   "curl -s -X POST http://localhost:3000/srt/auth -d 'id=%{query}&ip=%{sourceIp}'"
- *       runOnUnpublish: "curl -s -X POST http://localhost:3000/srt/done -d 'id=%{query}'"
+ *       runOnPublish:   "curl -s -X POST http://https://sil-api-811882866295.us-central1.run.app/srt/auth -d 'id=%{query}&ip=%{sourceIp}'"
+ *       runOnUnpublish: "curl -s -X POST http://https://sil-api-811882866295.us-central1.run.app/srt/done -d 'id=%{query}'"
  *
  * OR use the native runOnPublishRestart / onPublish hooks if you run
  * MediaMTX >= 1.3 which supports HTTP callbacks natively.
