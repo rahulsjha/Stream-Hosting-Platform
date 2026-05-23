@@ -56,12 +56,22 @@ const restreamer   = require('./services/restreamer');
 const app    = express();
 const server = http.createServer(app);
 
+// Cloud Run sits behind Google Front End, so trust the forwarded headers before
+// rate limiting and auth checks key off client IP.
+app.set('trust proxy', 1);
+
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 
 // ── Rate limiting (API only) ──────────────────────────────────────────────────
-app.use('/api', rateLimit({ windowMs: 15 * 60_000, max: 200, standardHeaders: true, legacyHeaders: false }));
+const apiLimiter = rateLimit({ windowMs: 15 * 60_000, max: 200, standardHeaders: true, legacyHeaders: false });
+app.use('/api', (req, res, next) => {
+  if (req.path === '/users/login' || req.path === '/users/register' || req.path === '/users/me') {
+    return next();
+  }
+  return apiLimiter(req, res, next);
+});
 
 // ── Body parsing ──────────────────────────────────────────────────────────────
 app.use(express.json());

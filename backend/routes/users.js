@@ -114,7 +114,14 @@ router.get('/me', requireAuth, async (req, res) => {
       [req.user.userId]
     );
     if (!rows.length) return res.status(404).json({ error: 'User not found' });
-    res.json(rows[0]);
+    res.json({
+      ...rows[0],
+      rtmp_server: `rtmp://${config.serverPublicIp}:1935/live`,
+      rtmp_ingest: rows[0].stream_key ? `rtmp://${config.serverPublicIp}:1935/live/${rows[0].stream_key}` : null,
+      srt_ingest: rows[0].stream_key && rows[0].srt_passphrase
+        ? buildSRTIngestURL(config.serverPublicIp, rows[0].stream_key, rows[0].srt_passphrase)
+        : null,
+    });
   } catch (err) {
     logger.error('[Users] /me error:', err);
     res.status(500).json({ error: 'Fetch failed' });
