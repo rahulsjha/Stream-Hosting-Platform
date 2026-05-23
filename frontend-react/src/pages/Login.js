@@ -42,15 +42,8 @@ const Login = () => {
       {/* Navigation */}
       <nav className="auth-nav">
         <Link to="/" className="auth-nav-logo">
-          <img src="/assets/logo.png" alt="SIL" className="auth-nav-logo-img" />
+          <img src="/assets/logo.png" alt="Second Chat" className="auth-nav-logo-img" />
         </Link>
-
-        <div className="nav-right">
-          <div className="nav-status">
-            <span className="live-dot"></span>
-            <span>System Online</span>
-          </div>
-        </div>
       </nav>
 
       {/* Auth Wrapper */}
@@ -88,7 +81,7 @@ const Login = () => {
 
             <div className="panel-testimonial">
               <div className="test-quote">
-                "The BRB health monitoring just saved my stream during technical issues."
+                "The dashboard makes it easy to manage my stream without extra clutter."
               </div>
               <div className="test-author">
                 <div className="test-avatar" style={{ backgroundColor: '#00e5a0' }}>J</div>
@@ -190,14 +183,6 @@ const Login = () => {
                 >
                   {isLogin ? 'Sign Up' : 'Sign In'}
                 </button>
-              </p>
-            </div>
-
-            {/* Terms */}
-            <div className="form-terms">
-              <p>
-                By signing up, you agree to our
-                <a href="#"> Terms of Service</a> and <a href="#">Privacy Policy</a>
               </p>
             </div>
           </div>

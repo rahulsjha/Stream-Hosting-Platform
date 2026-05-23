@@ -2,17 +2,14 @@ import axios from 'axios';
 
 const isBrowser = typeof window !== 'undefined';
 const isLocalhost = isBrowser && ['localhost', '127.0.0.1'].includes(window.location.hostname);
-const DEFAULT_REMOTE_API = 'https://sil-api-811882866295.us-central1.run.app/api';
+const DEFAULT_LOCAL_API = 'http://localhost:3000/api';
+const DEFAULT_PROD_API = 'https://sil-api-308720634926.us-central1.run.app/api';
 
 function normalizeApiBase(rawBase) {
-  const fallback = DEFAULT_REMOTE_API;
+  const fallback = DEFAULT_LOCAL_API;
   if (!rawBase) return fallback;
 
   const trimmed = rawBase.trim();
-
-  if (/\.run\.appapi(\/|$)/.test(trimmed)) {
-    return trimmed.replace(/\.run\.appapi(\/|$)/, '.run.app/api$1').replace(/\/$/, '');
-  }
 
   try {
     const url = new URL(trimmed);
@@ -30,12 +27,13 @@ function normalizeApiBase(rawBase) {
 }
 
 // Prefer an explicit environment variable. For local development, default to
-// the backend on port 3000 so the React dev server on 3001 does not swallow API requests.
+// the backend on port 3000. In production, default to the deployed Cloud Run
+// backend so browser requests go directly to the API instead of the frontend.
 const API_BASE = normalizeApiBase(
   process.env.REACT_APP_API_URL || (
     isBrowser
-      ? (isLocalhost ? 'https://sil-api-i6jmi6wdba-uc.a.run.app/api' : `${window.location.origin}/api`)
-      : DEFAULT_REMOTE_API
+      ? (isLocalhost ? DEFAULT_LOCAL_API : DEFAULT_PROD_API)
+      : DEFAULT_LOCAL_API
   )
 );
 
@@ -67,4 +65,5 @@ apiClient.interceptors.response.use(
   }
 );
 
+export { API_BASE };
 export default apiClient;

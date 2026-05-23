@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import './Landing.css';
 
@@ -201,7 +202,7 @@ const Landing = () => {
   useEffect(() => {
     // fetch current waitlist count
     let cancelled = false;
-    fetch('/api/waitlist/count')
+    fetch(`${API_BASE}/waitlist/count`)
       .then(r => r.json())
       .then(j => {
         if (!cancelled && j && typeof j.count !== 'undefined') setWaitCount(j.count);
@@ -218,7 +219,7 @@ const Landing = () => {
     setSubmittingWaitlist(true);
     setWaitMsg('');
     try {
-      const res = await fetch('/api/waitlist', {
+      const res = await fetch(`${API_BASE}/waitlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: waitEmail, platform: waitPlatform, channel_type: waitChannel })
@@ -227,7 +228,7 @@ const Landing = () => {
       setWaitMsg('Thanks — you are on the waitlist');
       setWaitEmail('');
       // refresh count
-      const r2 = await fetch('/api/waitlist/count');
+      const r2 = await fetch(`${API_BASE}/waitlist/count`);
       const j2 = await r2.json();
       if (j2 && typeof j2.count !== 'undefined') setWaitCount(j2.count);
     } catch (err) {
@@ -530,20 +531,27 @@ const Landing = () => {
           <div className="dashboard-mock r in" data-delay="2">
             <div className="db-header">
               <div className="db-dots"><div className="db-dot"></div><div className="db-dot"></div><div className="db-dot"></div></div>
-              <div className="db-title">streamforge — dashboard.app</div>
+              <div className="db-title">second chat — live control</div>
               <div style={{ width: '40px' }}></div>
             </div>
-            <div className="db-body">
-              <div className="db-stats-row">
-                <div className="db-stat"><div className="db-sv" style={{ color: 'var(--cyan)' }}>8.2M</div><div className="db-sl">Impressions</div></div>
-                <div className="db-stat"><div className="db-sv" style={{ color: 'var(--green)' }}>142K</div><div className="db-sl">New Followers</div></div>
-                <div className="db-stat"><div className="db-sv" style={{ color: 'var(--gold)' }}>$12.4K</div><div className="db-sl">Sub Revenue</div></div>
-                <div className="db-stat"><div className="db-sv" style={{ color: 'var(--red)' }}>18.5%</div><div className="db-sl">Conv. Rate</div></div>
-              </div>
-              <div className="db-chart-area"><canvas id="mockChart"></canvas></div>
-              <div className="db-alerts">
-                <div className="db-alert"><div className="db-alert-dot" style={{ background: 'var(--red)' }}></div><div><strong>System Event:</strong> Server US-East high load. Switching to US-Central automatically.</div></div>
-                <div className="db-alert"><div className="db-alert-dot" style={{ background: 'var(--green)' }}></div><div><strong>Milestone:</strong> You just crossed 100,000 concurrent viewers. Incredible!</div></div>
+            <div className="db-body" style={{ padding: '28px' }}>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.12em', color: 'var(--muted)', textTransform: 'uppercase' }}>Connected modules</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '12px' }}>
+                    <span className="landing-pill">Profile sync</span>
+                    <span className="landing-pill">Destinations</span>
+                    <span className="landing-pill">Ingest keys</span>
+                    <span className="landing-pill">Sessions</span>
+                  </div>
+                </div>
+
+                <div style={{ padding: '18px', borderRadius: '18px', border: '1px solid rgba(124, 58, 237, 0.18)', background: 'rgba(10, 10, 24, 0.7)' }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', letterSpacing: '0.06em', marginBottom: '8px' }}>Real data only</div>
+                  <p style={{ margin: 0, color: 'var(--muted)', lineHeight: 1.7 }}>
+                    The dashboard now reads from your backend account state instead of showing invented metrics or filler charts.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

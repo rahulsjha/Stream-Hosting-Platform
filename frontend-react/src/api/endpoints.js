@@ -15,6 +15,9 @@ export const authAPI = {
 };
 
 export const userAPI = {
+  getProfile: () =>
+    apiClient.get('/users/me'),
+
   updateDestinations: (yt_url, tw_url, kk_url, yt_on, tw_on, kk_on) =>
     apiClient.put('/users/destinations', { yt_url, tw_url, kk_url, yt_on, tw_on, kk_on }),
 
@@ -26,22 +29,6 @@ export const userAPI = {
 };
 
 export const mediaAPI = {
-  uploadBRB: (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    return apiClient.post('/media/brb', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
-
-  deleteBRB: () =>
-    apiClient.delete('/media/brb'),
-
-  getBRBInfo: () =>
-    apiClient.get('/media/brb/info'),
-
-  updateBRBSettings: (brb_enabled, brb_timeout_seconds) =>
-    apiClient.put('/media/brb/settings', { brb_enabled, brb_timeout_seconds }),
 };
 
 export const adminAPI = {

@@ -74,8 +74,8 @@ npm install
 Create `frontend-react/.env.local`:
 
 ```env
-REACT_APP_API_URL=http://https://sil-api-811882866295.us-central1.run.app/api
-REACT_APP_WS_URL=ws://https://sil-api-811882866295.us-central1.run.app
+REACT_APP_API_URL=http://localhost:3000/api
+REACT_APP_WS_URL=ws://localhost:3000/ws
 ```
 
 ### 3. Start React Development Server
@@ -84,7 +84,7 @@ REACT_APP_WS_URL=ws://https://sil-api-811882866295.us-central1.run.app
 npm start
 ```
 
-Frontend will open at `http://https://sil-api-811882866295.us-central1.run.app` in your browser with hot reload.
+Frontend will open at `http://localhost:3001` in your browser with hot reload.
 
 ---
 

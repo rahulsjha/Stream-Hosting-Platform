@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { userAPI } from '../../api/endpoints';
 
@@ -7,22 +7,22 @@ const Sessions = () => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadSessions();
-  }, []);
-
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     try {
       if (user?.username) {
         const response = await userAPI.getSessions(user.username);
-        setSessions(response.sessions || []);
+        setSessions(Array.isArray(response.data) ? response.data : []);
       }
     } catch (error) {
       console.error('Failed to load sessions:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.username]);
+
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
 
   return (
     <div className="section-sessions">
@@ -54,10 +54,10 @@ const Sessions = () => {
                 {sessions.map((session, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid var(--dash-border)' }}>
                     <td style={{ padding: '12px', fontSize: '13px' }}>
-                      {new Date(session.start_time).toLocaleString()}
+                      {new Date(session.started_at).toLocaleString()}
                     </td>
                     <td style={{ padding: '12px', fontSize: '13px' }}>
-                      {session.duration || '–'}
+                      {session.duration_seconds ? `${Math.floor(session.duration_seconds / 3600)}h ${Math.floor((session.duration_seconds % 3600) / 60)}m` : '–'}
                     </td>
                     <td style={{ padding: '12px', fontSize: '13px' }}>
                       <span style={{ textTransform: 'uppercase', fontSize: '12px', color: 'var(--dash-accent)' }}>

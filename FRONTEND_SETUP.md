@@ -16,7 +16,7 @@ PORT=3000
 DATABASE_URL=postgresql://user:password@localhost:5432/sil_hosting
 JWT_SECRET=your_secret_key_here
 SERVER_PUBLIC_IP=localhost
-CORS_ORIGIN=https://sil-api-811882866295.us-central1.run.app
+CORS_ORIGIN=http://localhost:3001
 EOF
 ```
 
@@ -29,8 +29,8 @@ npm install
 ### 4. Create Frontend .env
 ```bash
 cat > frontend-react/.env.local << 'EOF'
-REACT_APP_API_URL=https://sil-api-i6jmi6wdba-uc.a.run.app/api
-REACT_APP_WS_URL=ws://localhost:3000
+REACT_APP_API_URL=http://localhost:3000/api
+REACT_APP_WS_URL=ws://localhost:3000/ws
 EOF
 ```
 
@@ -48,7 +48,7 @@ cd frontend-react
 npm start
 ```
 
-✅ Done! Open http://https://sil-api-811882866295.us-central1.run.app
+✅ Done! Open http://localhost:3001
 
 ---
 

@@ -24,17 +24,21 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const fetchProfile = async () => {
+  const fetchProfile = async ({ clearOnFailure = true } = {}) => {
     try {
       const response = await authAPI.getProfile();
       setUser(response.data);
       setError(null);
+      return response.data;
     } catch (err) {
       console.error('Profile fetch failed:', err);
-      // Clear stale token
-      localStorage.clear();
-      setToken(null);
-      setUser(null);
+      if (clearOnFailure) {
+        // Clear stale token
+        localStorage.clear();
+        setToken(null);
+        setUser(null);
+      }
+      return null;
     } finally {
       setLoading(false);
     }
@@ -45,13 +49,14 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await authAPI.login(username, password);
-      const { token, username: u, plan } = response.data;
+      const { token, plan } = response.data;
 
       localStorage.setItem('sil_token', token);
       localStorage.setItem('sil_username', username);
 
       setToken(token);
-      setUser({ username, plan });
+      const profile = await fetchProfile({ clearOnFailure: false });
+      setUser(profile || { username, plan });
 
       return response.data;
     } catch (err) {
@@ -83,7 +88,8 @@ export const AuthProvider = ({ children }) => {
       }));
 
       setToken(token);
-      setUser({ username });
+      const profile = await fetchProfile({ clearOnFailure: false });
+      setUser(profile || { username });
 
       return response.data;
     } catch (err) {

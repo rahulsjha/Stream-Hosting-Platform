@@ -1,35 +1,66 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { userAPI } from '../../api/endpoints';
+import { authAPI, userAPI } from '../../api/endpoints';
 
 const IngestKeys = () => {
-  const { user } = useAuth();
+  const { user, fetchProfile } = useAuth();
   const [streamKey, setStreamKey] = useState('');
   const [rtmpUrl, setRtmpUrl] = useState('');
   const [srtUrl, setSrtUrl] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const applyIngestInfo = useCallback((profile = {}) => {
+    setStreamKey(profile.stream_key || profile.rtmp_stream_key || '');
+    setRtmpUrl(profile.rtmp_ingest || profile.rtmp_server || '');
+    setSrtUrl(profile.srt_ingest || '');
+  }, []);
+
+  const loadIngestInfo = useCallback(async () => {
+    try {
+      if (!user?.username) return;
+      applyIngestInfo(user);
+
+      const savedNewUser = localStorage.getItem('sil_newuser');
+      if (savedNewUser) {
+        try {
+          applyIngestInfo(JSON.parse(savedNewUser));
+        } catch {
+          // Ignore malformed local cache and continue with live profile fetch.
+        }
+      }
+
+      const response = await authAPI.getProfile();
+      const profile = response.data || {};
+      applyIngestInfo(profile);
+    } catch (error) {
+      console.error('Failed to load ingest info:', error);
+    }
+  }, [applyIngestInfo, user]);
 
   useEffect(() => {
     loadIngestInfo();
-  }, []);
+  }, [loadIngestInfo]);
 
-  const loadIngestInfo = async () => {
+  const handleRegenerateKey = async () => {
+    if (!window.confirm('Regenerate your stream key? Your encoder will need the new key immediately.')) return;
+    setRefreshing(true);
     try {
-      const profile = await userAPI.getProfile?.() || {};
-      const newUserData = localStorage.getItem('sil_newuser');
-      if (newUserData) {
-        const data = JSON.parse(newUserData);
-        setStreamKey(data.stream_key);
-        setRtmpUrl(data.rtmp_ingest);
-        setSrtUrl(data.srt_ingest);
-      } else if (profile.stream_key) {
-        setStreamKey(profile.stream_key);
-      }
+      const response = await userAPI.regenerateStreamKey();
+      const data = response.data || {};
+      setStreamKey(data.stream_key || '');
+      setRtmpUrl(data.rtmp_ingest || '');
+      setSrtUrl('');
+      await fetchProfile({ clearOnFailure: false });
+      alert('Stream key regenerated successfully');
     } catch (error) {
-      console.error('Failed to load ingest info:', error);
+      alert('Failed to regenerate stream key');
+    } finally {
+      setRefreshing(false);
     }
   };
 
   const copyToClipboard = (text) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     alert('Copied to clipboard!');
   };
@@ -51,8 +82,11 @@ const IngestKeys = () => {
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
+                className="ingest-display-input"
                 value={streamKey}
+                placeholder="Stream key will appear here"
                 readOnly
+                tabIndex={-1}
                 style={{ flex: 1 }}
               />
               <button
@@ -71,8 +105,11 @@ const IngestKeys = () => {
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
+                className="ingest-display-input"
                 value={rtmpUrl}
+                placeholder="RTMP ingest URL will appear here"
                 readOnly
+                tabIndex={-1}
                 style={{ flex: 1 }}
               />
               <button
@@ -91,8 +128,11 @@ const IngestKeys = () => {
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
+                className="ingest-display-input"
                 value={srtUrl}
+                placeholder="SRT ingest URL will appear here"
                 readOnly
+                tabIndex={-1}
                 style={{ flex: 1 }}
               />
               <button
@@ -105,9 +145,34 @@ const IngestKeys = () => {
             </div>
           </div>
 
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleRegenerateKey}
+            disabled={refreshing}
+            style={{ marginBottom: '16px' }}
+          >
+            {refreshing ? 'Regenerating...' : 'Regenerate Stream Key'}
+          </button>
+
           <div style={{ marginTop: '20px', padding: '14px', background: 'rgba(0, 229, 160, 0.08)', borderRadius: '8px', borderLeft: '3px solid var(--dash-accent)' }}>
             <p style={{ fontSize: '13px', color: 'var(--dash-text)' }}>
               <strong>Keep these secret!</strong> Don't share your stream key publicly.
+            </p>
+          </div>
+
+          <div style={{ marginTop: '14px', padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <p style={{ fontSize: '13px', color: 'var(--dash-text)', marginBottom: '8px' }}>
+              <strong>OBS Studio setup</strong>
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--dash-muted)', lineHeight: 1.6, marginBottom: '6px' }}>
+              In OBS, choose <strong>Settings</strong> → <strong>Stream</strong> → <strong>Service: Custom</strong>.
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--dash-muted)', lineHeight: 1.6, marginBottom: '6px' }}>
+              Set <strong>Server</strong> to <code>rtmp://34.46.51.228:1935/live</code> and paste the key from above into <strong>Stream Key</strong>.
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--dash-muted)', lineHeight: 1.6 }}>
+              Then click <strong>Apply</strong> and <strong>Start Streaming</strong>.
             </p>
           </div>
         </div>

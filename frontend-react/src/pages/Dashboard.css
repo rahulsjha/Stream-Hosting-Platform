@@ -112,60 +112,6 @@
   100% { opacity: 1; }
 }
 
-.sidebar-logo {
-  padding: 24px 24px 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  position: relative;
-  z-index: 2;
-  text-decoration: none;
-  color: inherit;
-}
-
-.sidebar-logo-mark {
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
-  background: transparent;
-  box-shadow: 0 0 24px var(--redglow), 0 0 50px rgba(124, 58, 237, 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.sidebar-logo-mark i {
-  font-size: 1.2rem;
-}
-
-.sidebar-logo-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.sidebar-logo-title {
-  font-family: var(--font-display);
-  font-size: 1.85rem;
-  letter-spacing: 2px;
-  line-height: 0.95;
-  background: linear-gradient(135deg, #fff 30%, var(--violet2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.sidebar-logo-subtitle {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
 .sidebar-status {
   margin: 16px 16px 0;
   display: flex;
@@ -326,10 +272,11 @@
 }
 
 .platform-chip-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
   flex-shrink: 0;
+  display: inline-block;
 }
 
 .platform-chip-name {
@@ -1084,9 +1031,13 @@
 .section-hd {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   margin-bottom: 4px;
+}
+
+.section-hd .topbar-btn.primary {
+  margin-top: 2px;
 }
 
 .section-hd h2 {
@@ -1240,7 +1191,19 @@
 }
 
 .dashboard-shell .pt-icon {
-  font-size: 2rem;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-shell .platform-logo {
+  width: 34px;
+  height: 34px;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.08));
 }
 
 .dashboard-shell .pt-name {
@@ -1312,6 +1275,23 @@
 .dashboard-shell input[readonly] {
   opacity: 0.65;
   cursor: default;
+}
+
+.dashboard-shell .ingest-display-input {
+  background: linear-gradient(180deg, rgba(6, 6, 18, 0.95), rgba(10, 10, 24, 0.95));
+  border-color: rgba(124, 58, 237, 0.25);
+  color: rgba(241, 239, 255, 0.94);
+  user-select: none;
+  caret-color: transparent;
+}
+
+.dashboard-shell .ingest-display-input::placeholder {
+  color: rgba(241, 239, 255, 0.34);
+}
+
+.dashboard-shell .ingest-display-input:focus {
+  border-color: rgba(124, 58, 237, 0.25);
+  box-shadow: none;
 }
 
 .dashboard-shell .btn,

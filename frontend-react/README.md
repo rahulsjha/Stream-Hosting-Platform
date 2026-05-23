@@ -5,8 +5,8 @@
 Create a `.env.local` file in the `frontend-react` directory:
 
 ```
-REACT_APP_API_URL=http://https://sil-api-811882866295.us-central1.run.app/api
-REACT_APP_WS_URL=ws://https://sil-api-811882866295.us-central1.run.app
+REACT_APP_API_URL=http://localhost:3000/api
+REACT_APP_WS_URL=ws://localhost:3000/ws
 ```
 
 ## Installation
@@ -22,13 +22,27 @@ npm install
 npm start
 ```
 
-The app will open at `http://https://sil-api-811882866295.us-central1.run.app` with hot reload enabled.
+The app will open at `http://localhost:3001` with hot reload enabled.
 
 ## Build for Production
 
 ```bash
 npm run build
 ```
+
+## Cloud Run Deployment
+
+The frontend can run on Cloud Run as a static container that proxies API calls to the backend service.
+
+```bash
+gcloud run deploy sil-frontend \
+	--source . \
+	--region us-central1 \
+	--allow-unauthenticated \
+	--set-env-vars BACKEND_URL=https://YOUR-BACKEND-SERVICE-URL
+```
+
+Set `BACKEND_URL` to the backend Cloud Run root URL, without `/api`. The container automatically serves the React build and forwards `/api/*` and `/ws` to the backend.
 
 ## Features Implemented
 
