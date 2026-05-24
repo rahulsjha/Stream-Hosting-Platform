@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { authAPI, userAPI } from '../../api/endpoints';
+import { userAPI } from '../../api/endpoints';
 
 const IngestKeys = () => {
-  const { user, fetchProfile } = useAuth();
+  const { user } = useAuth();
   const [streamKey, setStreamKey] = useState('');
   const [rtmpUrl, setRtmpUrl] = useState('');
   const [srtUrl, setSrtUrl] = useState('');
@@ -29,7 +29,7 @@ const IngestKeys = () => {
         }
       }
 
-      const response = await authAPI.getProfile();
+      const response = await userAPI.getProfile();
       const profile = response.data || {};
       applyIngestInfo(profile);
     } catch (error) {
@@ -50,7 +50,6 @@ const IngestKeys = () => {
       setStreamKey(data.stream_key || '');
       setRtmpUrl(data.rtmp_ingest || '');
       setSrtUrl('');
-      await fetchProfile({ clearOnFailure: false });
       alert('Stream key regenerated successfully');
     } catch (error) {
       alert('Failed to regenerate stream key');

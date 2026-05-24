@@ -1,9 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { userAPI } from '../../api/endpoints';
 
 const Destinations = () => {
-  const { user, fetchProfile } = useAuth();
+  const { user: authUser, fetchProfile } = useAuth();
+  const username = authUser?.username || '';
+  const initialProfile = {
+    username,
+    youtube_url: authUser?.youtube_url || '',
+    twitch_url: authUser?.twitch_url || '',
+    kick_url: authUser?.kick_url || '',
+  };
   const [ytUrl, setYtUrl] = useState('');
   const [twUrl, setTwUrl] = useState('');
   const [kkUrl, setKkUrl] = useState('');
@@ -11,18 +18,28 @@ const Destinations = () => {
   const [twKey, setTwKey] = useState('');
   const [kkKey, setKkKey] = useState('');
   const [saving, setSaving] = useState(false);
+  const initialProfileLoaded = useRef(false);
+  const hasUserEdited = useRef(false);
 
-  const extractKey = useCallback((value) => {
+  const extractKey = useCallback((value, platform) => {
     if (!value) return '';
     const raw = String(value).trim();
     if (!raw) return '';
     try {
       const url = new URL(raw);
       const segments = url.pathname.split('/').filter(Boolean);
-      return segments.length ? segments[segments.length - 1] : raw;
+
+      if (platform === 'youtube') {
+        return segments.length >= 2 && segments[0] === 'live2' ? segments[1] : '';
+      }
+
+      if ((platform === 'twitch' || platform === 'kick') && segments.length >= 2 && segments[0] === 'app') {
+        return segments[1];
+      }
+
+      return '';
     } catch {
-      const segments = raw.split('/').filter(Boolean);
-      return segments.length ? segments[segments.length - 1] : raw;
+      return '';
     }
   }, []);
 
@@ -30,9 +47,9 @@ const Destinations = () => {
     setYtUrl(profile.youtube_url || '');
     setTwUrl(profile.twitch_url || '');
     setKkUrl(profile.kick_url || '');
-    setYtKey(extractKey(profile.youtube_url));
-    setTwKey(extractKey(profile.twitch_url));
-    setKkKey(extractKey(profile.kick_url));
+    setYtKey(extractKey(profile.youtube_url, 'youtube'));
+    setTwKey(extractKey(profile.twitch_url, 'twitch'));
+    setKkKey(extractKey(profile.kick_url, 'kick'));
   }, [extractKey]);
 
   useEffect(() => {
@@ -40,12 +57,29 @@ const Destinations = () => {
 
     const syncProfile = async () => {
       try {
-        if (!user?.username) return;
+        if (!username) return;
+
+        if (initialProfileLoaded.current) return;
+
+        // If we already have values from the context, use them and mark loaded.
+        if (initialProfile.youtube_url || initialProfile.twitch_url || initialProfile.kick_url) {
+          initialProfileLoaded.current = true;
+          loadSavedDestinations(initialProfile);
+          return;
+        }
+
+        // Mark as loaded now to avoid starting multiple concurrent fetches while
+        // the user is typing (which could repeatedly overwrite inputs).
+        initialProfileLoaded.current = true;
+
         const response = await fetchProfile({ clearOnFailure: false });
         if (!active) return;
-        loadSavedDestinations(response || user || {});
+        if (hasUserEdited.current) return;
+        loadSavedDestinations(response || initialProfile || {});
       } catch {
-        if (active) loadSavedDestinations(user || {});
+        if (active && !hasUserEdited.current) {
+          loadSavedDestinations(initialProfile);
+        }
       }
     };
 
@@ -54,31 +88,31 @@ const Destinations = () => {
     return () => {
       active = false;
     };
-  }, [fetchProfile, loadSavedDestinations, user]);
-
-  const savedSummary = useMemo(() => ([
-    { label: 'YouTube', url: ytUrl, key: ytKey },
-    { label: 'Twitch', url: twUrl, key: twKey },
-    { label: 'Kick', url: kkUrl, key: kkKey },
-  ]), [kkKey, kkUrl, twKey, twUrl, ytKey, ytUrl]);
+  }, [fetchProfile, loadSavedDestinations, username]);
 
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      // If the user provided platform keys, construct the platform ingest URLs
-      const buildYt = ytKey && !ytUrl ? `rtmp://a.rtmp.youtube.com/live2/${ytKey}` : ytUrl;
-      const buildTw = twKey && !twUrl ? `rtmp://live.twitch.tv/app/${twKey}` : twUrl;
-      const buildKk = kkKey && !kkUrl ? `rtmps://global-contribute.live-video.net:443/app/${kkKey}` : kkUrl;
+      // Prefer stream keys when present; otherwise save the full ingest URL.
+      const buildYt = ytKey?.trim()
+        ? `rtmp://a.rtmp.youtube.com/live2/${ytKey.trim()}`
+        : ytUrl.trim();
+      const buildTw = twKey?.trim()
+        ? `rtmp://live.twitch.tv/app/${twKey.trim()}`
+        : twUrl.trim();
+      const buildKk = kkKey?.trim()
+        ? `rtmps://fa723fc1b171.global-contribute.live-video.net:443/app/${kkKey.trim()}`
+        : kkUrl.trim();
 
       await userAPI.updateDestinations(buildYt, buildTw, buildKk, !!(buildYt), !!(buildTw), !!(buildKk));
-      const refreshed = await fetchProfile({ clearOnFailure: false });
-      loadSavedDestinations(refreshed || {
+      hasUserEdited.current = false;
+      initialProfileLoaded.current = true;
+      loadSavedDestinations({
         youtube_url: buildYt,
         twitch_url: buildTw,
         kick_url: buildKk,
       });
-      alert('Destinations updated successfully!');
     } catch (error) {
       alert('Failed to update destinations');
     } finally {
@@ -104,7 +138,10 @@ const Destinations = () => {
               type="url"
               placeholder="rtmp://a.rtmp.youtube.com/live2/..."
               value={ytUrl}
-              onChange={(e) => setYtUrl(e.target.value)}
+              onChange={(e) => {
+                hasUserEdited.current = true;
+                setYtUrl(e.target.value);
+              }}
             />
               <small className="muted">Or enter only your YouTube stream key below</small>
               <input
@@ -112,7 +149,10 @@ const Destinations = () => {
                 type="text"
                 placeholder="YouTube stream key (e.g. xxxxx-xxxx-xxxx)"
                 value={ytKey}
-                onChange={(e) => setYtKey(e.target.value)}
+                onChange={(e) => {
+                  hasUserEdited.current = true;
+                  setYtKey(e.target.value);
+                }}
                 style={{ marginTop: '6px' }}
               />
           </div>
@@ -125,7 +165,10 @@ const Destinations = () => {
               type="url"
               placeholder="rtmp://live.twitch.tv/app/..."
               value={twUrl}
-              onChange={(e) => setTwUrl(e.target.value)}
+              onChange={(e) => {
+                hasUserEdited.current = true;
+                setTwUrl(e.target.value);
+              }}
             />
             <small className="muted">Or enter only your Twitch stream key below</small>
             <input
@@ -133,7 +176,10 @@ const Destinations = () => {
               type="text"
               placeholder="Twitch stream key"
               value={twKey}
-              onChange={(e) => setTwKey(e.target.value)}
+              onChange={(e) => {
+                hasUserEdited.current = true;
+                setTwKey(e.target.value);
+              }}
               style={{ marginTop: '6px' }}
             />
           </div>
@@ -146,7 +192,10 @@ const Destinations = () => {
               type="url"
               placeholder="rtmps://fa723fc1b171.global-contribute.live-video.net:443/app/..."
               value={kkUrl}
-              onChange={(e) => setKkUrl(e.target.value)}
+              onChange={(e) => {
+                hasUserEdited.current = true;
+                setKkUrl(e.target.value);
+              }}
             />
             <small className="muted">Or enter only your Kick stream key below</small>
             <input
@@ -154,7 +203,10 @@ const Destinations = () => {
               type="text"
               placeholder="Kick stream key"
               value={kkKey}
-              onChange={(e) => setKkKey(e.target.value)}
+              onChange={(e) => {
+                hasUserEdited.current = true;
+                setKkKey(e.target.value);
+              }}
               style={{ marginTop: '6px' }}
             />
           </div>
@@ -163,23 +215,6 @@ const Destinations = () => {
             {saving ? 'Saving...' : 'Save Destinations'}
           </button>
         </form>
-
-        <div style={{ marginTop: '20px', padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <p style={{ marginBottom: '10px', fontWeight: 600 }}>Stored in your dashboard</p>
-          <div style={{ display: 'grid', gap: '10px' }}>
-            {savedSummary.map((item) => (
-              <div key={item.label} style={{ display: 'grid', gap: '4px' }}>
-                <div style={{ fontSize: '12px', color: 'var(--dash-muted)' }}>{item.label}</div>
-                <div style={{ fontSize: '13px' }}>
-                  URL: {item.url || 'Not saved yet'}
-                </div>
-                <div style={{ fontSize: '13px', color: 'var(--dash-muted)' }}>
-                  Key: {item.key || 'Not saved yet'}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

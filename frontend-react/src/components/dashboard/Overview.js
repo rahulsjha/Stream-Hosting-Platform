@@ -60,13 +60,6 @@ const Overview = ({ profile: initialProfile, sessionCount = 0, liveDuration = 'â
 
   const activeDestinations = destinationCards.filter((item) => item.enabled).length;
 
-  const formatStoredValue = (value) => {
-    if (!value) return 'Not saved yet';
-    const trimmed = String(value).trim();
-    if (trimmed.length <= 38) return trimmed;
-    return `${trimmed.slice(0, 22)}â€¦${trimmed.slice(-12)}`;
-  };
-
   const formatTime = (value) => {
     if (!value) return 'â€”';
     const date = new Date(value);
@@ -173,12 +166,6 @@ const Overview = ({ profile: initialProfile, sessionCount = 0, liveDuration = 'â
                 </div>
                 <div className="pt-name">{item.label}</div>
                 <div className="pt-status">{item.enabled ? 'ON' : 'OFF'}</div>
-                <div className="pt-status" style={{ gridColumn: '1 / -1', fontSize: '11px', lineHeight: 1.4, color: 'var(--dash-muted)' }}>
-                  URL: {formatStoredValue(item.url)}
-                </div>
-                <div className="pt-status" style={{ gridColumn: '1 / -1', fontSize: '11px', lineHeight: 1.4, color: 'var(--dash-muted)' }}>
-                  Key: {formatStoredValue(item.url ? item.url.split('/').filter(Boolean).pop() : '')}
-                </div>
               </div>
             ))}
           </div>
