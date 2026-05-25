@@ -5,8 +5,8 @@
 Create a `.env.local` file in the `frontend-react` directory:
 
 ```
-REACT_APP_API_URL=http://localhost:3000/api
-REACT_APP_WS_URL=ws://localhost:3000/ws
+REACT_APP_API_URL=https://sil-api-308720634926.us-central1.run.app/api
+REACT_APP_WS_URL=wss://sil-api-308720634926.us-central1.run.app/ws
 ```
 
 ## Installation
@@ -22,7 +22,7 @@ npm install
 npm start
 ```
 
-The app will open at `http://localhost:3001` with hot reload enabled.
+The app will open at the deployed frontend URL with hot reload enabled.
 
 ## Build for Production
 

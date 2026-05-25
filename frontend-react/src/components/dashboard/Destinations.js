@@ -5,12 +5,9 @@ import { userAPI } from '../../api/endpoints';
 const Destinations = () => {
   const { user: authUser, fetchProfile } = useAuth();
   const username = authUser?.username || '';
-  const initialProfile = {
-    username,
-    youtube_url: authUser?.youtube_url || '',
-    twitch_url: authUser?.twitch_url || '',
-    kick_url: authUser?.kick_url || '',
-  };
+  const initialYoutubeUrl = authUser?.youtube_url || '';
+  const initialTwitchUrl = authUser?.twitch_url || '';
+  const initialKickUrl = authUser?.kick_url || '';
   const [ytUrl, setYtUrl] = useState('');
   const [twUrl, setTwUrl] = useState('');
   const [kkUrl, setKkUrl] = useState('');
@@ -62,9 +59,13 @@ const Destinations = () => {
         if (initialProfileLoaded.current) return;
 
         // If we already have values from the context, use them and mark loaded.
-        if (initialProfile.youtube_url || initialProfile.twitch_url || initialProfile.kick_url) {
+        if (initialYoutubeUrl || initialTwitchUrl || initialKickUrl) {
           initialProfileLoaded.current = true;
-          loadSavedDestinations(initialProfile);
+          loadSavedDestinations({
+            youtube_url: initialYoutubeUrl,
+            twitch_url: initialTwitchUrl,
+            kick_url: initialKickUrl,
+          });
           return;
         }
 
@@ -75,10 +76,18 @@ const Destinations = () => {
         const response = await fetchProfile({ clearOnFailure: false });
         if (!active) return;
         if (hasUserEdited.current) return;
-        loadSavedDestinations(response || initialProfile || {});
+        loadSavedDestinations(response || {
+          youtube_url: initialYoutubeUrl,
+          twitch_url: initialTwitchUrl,
+          kick_url: initialKickUrl,
+        });
       } catch {
         if (active && !hasUserEdited.current) {
-          loadSavedDestinations(initialProfile);
+          loadSavedDestinations({
+            youtube_url: initialYoutubeUrl,
+            twitch_url: initialTwitchUrl,
+            kick_url: initialKickUrl,
+          });
         }
       }
     };
@@ -88,7 +97,7 @@ const Destinations = () => {
     return () => {
       active = false;
     };
-  }, [fetchProfile, loadSavedDestinations, username]);
+  }, [fetchProfile, initialYoutubeUrl, initialTwitchUrl, initialKickUrl, loadSavedDestinations, username]);
 
   const handleSave = async (e) => {
     e.preventDefault();

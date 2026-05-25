@@ -318,9 +318,13 @@ function _emit(session, state, extra = {}) {
 
 function _buildDests(user) {
   const d = [];
-  if (user.stream_to_youtube && user.youtube_url) d.push(user.youtube_url);
-  if (user.stream_to_kick    && user.kick_url)    d.push(user.kick_url);
-  if (user.stream_to_twitch  && user.twitch_url)  d.push(user.twitch_url);
+  const youtubeUrl = normalizePlatformUrl(user.youtube_url, 'youtube');
+  const kickUrl = normalizePlatformUrl(user.kick_url, 'kick');
+  const twitchUrl = normalizePlatformUrl(user.twitch_url, 'twitch');
+
+  if (user.stream_to_youtube && youtubeUrl) d.push(youtubeUrl);
+  if (user.stream_to_kick && kickUrl) d.push(kickUrl);
+  if (user.stream_to_twitch && twitchUrl) d.push(twitchUrl);
   return d;
 }
 

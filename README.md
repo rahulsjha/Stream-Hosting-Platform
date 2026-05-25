@@ -103,8 +103,8 @@ docker-compose up -d
 
 Services started:
 - `sil-api`      → http://https://sil-api-811882866295.us-central1.run.app
-- `nginx-rtmp`   → rtmp://localhost:1935/live (RTMP ingest)
-- `mediamtx`     → srt://localhost:9999 (SRT ingest)
+- `nginx-rtmp`   → rtmp://34.46.51.228:1935/live (RTMP ingest)
+- `mediamtx`     → srt://34.46.51.228:9999 (SRT ingest)
 
 If you only start the Node.js API (port 3000) without nginx-rtmp, OBS will show
 "Failed to connect" because nothing is listening on `:1935`.
@@ -138,7 +138,7 @@ nc -zv 127.0.0.1 8554   # RTSP (used internally for SRT restream pulls)
 ```
 
 OBS settings for local dev:
-- Server: `rtmp://localhost:1935/live`
+- Server: `rtmp://34.46.51.228:1935/live`
 - Stream Key: the key shown in the dashboard
 
 ### 4c. Run manually (advanced)

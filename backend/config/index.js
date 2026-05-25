@@ -42,6 +42,27 @@ const bool = (key, fallback) => {
   return v === undefined ? fallback : v === 'true' || v === '1';
 };
 
+const DEFAULT_INGEST_HOST = '34.46.51.228';
+
+const serverPublicIp = (() => {
+  const raw = (process.env.SERVER_PUBLIC_IP || '').trim();
+  if (!raw) return DEFAULT_INGEST_HOST;
+  if (raw === 'YOUR_SERVER_IP_OR_HOSTNAME' || raw === 'YOUR_SERVER_IP') return DEFAULT_INGEST_HOST;
+  // Allow common copy/pastes like: http://1.2.3.4:3000 or https://domain.com/
+  // but ingest URLs need only a hostname (no scheme, no path).
+  try {
+    if (/^https?:\/\//i.test(raw)) {
+      return new URL(raw).hostname || DEFAULT_INGEST_HOST;
+    }
+  } catch { /* ignore */ }
+
+  // Strip any accidental path.
+  const noPath = raw.split('/')[0].trim();
+  // Strip a port if present.
+  const hostOnly = noPath.includes(':') ? noPath.split(':')[0] : noPath;
+  return hostOnly || DEFAULT_INGEST_HOST;
+})();
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Config object
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,24 +73,7 @@ module.exports = {
   corsOrigin:     process.env.CORS_ORIGIN || '*',
 
   /** Public-facing IP / hostname of this server (used in ingest URLs). */
-  serverPublicIp: (() => {
-    const raw = (process.env.SERVER_PUBLIC_IP || '').trim();
-    if (!raw) return 'localhost';
-    if (raw === 'YOUR_SERVER_IP_OR_HOSTNAME' || raw === 'YOUR_SERVER_IP') return 'localhost';
-    // Allow common copy/pastes like: http://1.2.3.4:3000 or https://domain.com/
-    // but ingest URLs need only a hostname (no scheme, no path).
-    try {
-      if (/^https?:\/\//i.test(raw)) {
-        return new URL(raw).hostname || 'localhost';
-      }
-    } catch { /* ignore */ }
-
-    // Strip any accidental path.
-    const noPath = raw.split('/')[0].trim();
-    // Strip a port if present.
-    const hostOnly = noPath.includes(':') ? noPath.split(':')[0] : noPath;
-    return hostOnly || 'localhost';
-  })(),
+  serverPublicIp,
 
   // ── Database (Supabase / PostgreSQL) ───────────────────────────────────────
   //   Third-party service: Supabase (https://supabase.com)
@@ -107,7 +111,7 @@ module.exports = {
   //   nginx-rtmp calls on_publish → POST /rtmp/auth and on_done → POST /rtmp/done
   //   to this Node.js server for auth and stream-end handling.
   rtmp: {
-    localServer: process.env.RTMP_LOCAL     || 'rtmp://127.0.0.1/live',
+    localServer: process.env.RTMP_LOCAL     || `rtmp://${serverPublicIp}:1935/live`,
     nginxApi:    process.env.NGINX_RTMP_API || 'http://127.0.0.1:8080/control',
   },
 
@@ -117,7 +121,7 @@ module.exports = {
   //   Also exposes a REST API at MEDIAMTX_API that streamHealth.js polls
   //   every 5 s for bitrate and packet-loss metrics.
   srt: {
-    server:      process.env.SRT_SERVER    || '127.0.0.1',
+    server:      process.env.SRT_SERVER    || serverPublicIp,
     port:        int('SRT_PORT', 9999),
     rtspPort:    int('MEDIAMTX_RTSP_PORT', 8554),
     mediamtxApi: process.env.MEDIAMTX_API || 'http://127.0.0.1:9997',

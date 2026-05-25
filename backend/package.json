@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node scripts/dev-local.js",
-    "dev:api": "nodemon server.js",
+    "dev:start": "node scripts/dev-local.js",
+    "dev:api": "nodemon --watch server.js --watch routes --watch middleware --watch services --watch config --watch utils --ignore logs --ignore uploads --ignore node_modules server.js",
     "db:migrate": "node db/migrate.js",
     "db:migrate:status": "node db/migrate.js status"
   },

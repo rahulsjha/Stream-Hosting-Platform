@@ -7,6 +7,21 @@ const puppeteer = require('puppeteer-core');
   });
   const page = await browser.newPage();
 
+  // If provided, set auth tokens before any script runs so the app
+  // initializes as an authenticated session.
+  const injectedToken = process.env.SIL_TOKEN;
+  const injectedUsername = process.env.SIL_USERNAME;
+  if (injectedToken || injectedUsername) {
+    await page.evaluateOnNewDocument((token, username) => {
+      try {
+        if (token) localStorage.setItem('sil_token', token);
+        if (username) localStorage.setItem('sil_username', username);
+      } catch (e) {
+        // ignore
+      }
+    }, injectedToken, injectedUsername);
+  }
+
   page.on('console', (msg) => {
     console.log('PAGE LOG:', msg.type(), msg.text());
   });
@@ -15,7 +30,7 @@ const puppeteer = require('puppeteer-core');
     console.error('PAGE ERROR:', err.stack || err.toString());
   });
 
-  const target = process.env.TARGET_URL || 'http://localhost:3003';
+  const target = process.env.TARGET_URL || 'https://sil-frontend-308720634926.us-central1.run.app';
   try {
     await page.goto(target, { waitUntil: 'networkidle2', timeout: 30000 });
     // Wait a bit for runtime errors to appear

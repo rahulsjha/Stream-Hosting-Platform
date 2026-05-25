@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI } from '../api/endpoints';
 
 const AuthContext = createContext();
@@ -9,22 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load token and user from localStorage on mount
-  useEffect(() => {
-    const savedToken = localStorage.getItem('sil_token');
-    const savedUsername = localStorage.getItem('sil_username');
-
-    if (savedToken && savedUsername) {
-      setToken(savedToken);
-      setUser({ username: savedUsername });
-      // Verify token is still valid
-      fetchProfile();
-    } else {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchProfile = async ({ clearOnFailure = true } = {}) => {
+  const fetchProfile = useCallback(async ({ clearOnFailure = true } = {}) => {
     try {
       const response = await authAPI.getProfile();
       setUser(response.data);
@@ -42,7 +27,22 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Load token and user from localStorage on mount
+  useEffect(() => {
+    const savedToken = localStorage.getItem('sil_token');
+    const savedUsername = localStorage.getItem('sil_username');
+
+    if (savedToken && savedUsername) {
+      setToken(savedToken);
+      setUser({ username: savedUsername });
+      // Verify token is still valid
+      fetchProfile();
+    } else {
+      setLoading(false);
+    }
+  }, [fetchProfile]);
 
   const login = async (username, password) => {
     setLoading(true);

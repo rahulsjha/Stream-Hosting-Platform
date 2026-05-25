@@ -50,7 +50,12 @@ router.post('/rtmp/auth', async (req, res) => {
   }
   const clientIp  = req.body?.addr || req.body?.ip || req.ip;
 
-  if (!streamKey) return res.sendStatus(400);
+  logger.info(`[${ingestType.toUpperCase()}] Auth request received  ip=${clientIp}  key=${streamKey || 'missing'}`);
+
+  if (!streamKey) {
+    logger.warn('[RTMP] Auth called with no streamKey - body snapshot: %o', req.body || {});
+    return res.sendStatus(400);
+  }
 
   try {
     const { rows } = await db.query(
@@ -59,7 +64,7 @@ router.post('/rtmp/auth', async (req, res) => {
     );
 
     if (!rows.length) {
-      logger.warn(`[RTMP] Auth DENIED  key=${streamKey}  ip=${clientIp}`);
+      logger.warn(`[RTMP] Auth DENIED  key=${streamKey}  ip=${clientIp}  rawBody=${JSON.stringify(req.body).slice(0,500)}`);
       return res.sendStatus(403);
     }
 
@@ -81,6 +86,7 @@ router.post('/rtmp/auth', async (req, res) => {
     ]);
 
     logger.info(`[${ingestType.toUpperCase()}] ${user.username} LIVE  ip=${clientIp}`);
+    logger.debug('[RTMP] Auth payload snapshot: %o', { streamKey, clientIp, reqBody: req.body });
     broadcast('stream_start', { username: user.username, ingestType });
 
     res.sendStatus(200);   // MUST respond before spawning FFmpeg
@@ -95,6 +101,7 @@ router.post('/rtmp/auth', async (req, res) => {
 // ── RTMP done (nginx-rtmp on_done) ───────────────────────────────────────────
 router.post('/rtmp/done', async (req, res) => {
   const streamKey = normalizeStreamKey(req.body.name);
+  logger.info(`[RTMP] Done request received  key=${streamKey || 'missing'}`);
   res.sendStatus(200);   // ack immediately – nginx won't wait
 
   // Stop live restream instantly so we don't double-push to platforms
@@ -122,6 +129,9 @@ router.post('/srt/auth', async (req, res) => {
   const streamId = req.body.id || req.body.name || req.query.id || req.query.name || '';
   const clientIp = req.body.ip || req.body.addr || req.query.ip || req.query.addr || req.ip;
 
+  logger.info(`[SRT] Auth request received  ip=${clientIp}  streamId=${streamId || 'missing'}`);
+  logger.debug('[SRT] auth called: streamId=%s ip=%s body=%o', streamId, clientIp, req.body || {});
+
   // Cancel any active BRB (this is a reconnect)
   const rawKey = parseStreamKey(streamId);
   if (rawKey) brbManager.onReconnect(rawKey);
@@ -135,6 +145,9 @@ router.post('/srt/done', async (req, res) => {
   res.sendStatus(200);
   const streamId = req.body.id || req.body.name || req.query.id || req.query.name || '';
   const rawKey   = parseStreamKey(streamId);
+
+  logger.info(`[SRT] Done request received  key=${rawKey || 'missing'}`);
+  logger.debug('[SRT] done called: streamId=%s body=%o', streamId, req.body || {});
 
   // Stop live restream – BRB will take over platform connections
   if (rawKey) restreamer.stop(rawKey);

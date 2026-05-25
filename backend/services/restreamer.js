@@ -28,6 +28,7 @@ const { spawn } = require('child_process');
 const EventEmitter = require('events');
 const logger = require('../utils/logger');
 const config = require('../config');
+const { normalizePlatformUrl } = require('../utils/platformUrls');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DestinationPusher – one FFmpeg process → one platform
@@ -135,12 +136,16 @@ class RestreamSession extends EventEmitter {
 
   _getDestinations() {
     const dests = [];
-    if (this.user.stream_to_youtube && this.user.youtube_url)
-      dests.push({ label: 'YouTube', url: this.user.youtube_url });
-    if (this.user.stream_to_kick    && this.user.kick_url)
-      dests.push({ label: 'Kick',    url: this.user.kick_url    });
-    if (this.user.stream_to_twitch  && this.user.twitch_url)
-      dests.push({ label: 'Twitch',  url: this.user.twitch_url  });
+    const youtubeUrl = normalizePlatformUrl(this.user.youtube_url, 'youtube');
+    const kickUrl = normalizePlatformUrl(this.user.kick_url, 'kick');
+    const twitchUrl = normalizePlatformUrl(this.user.twitch_url, 'twitch');
+
+    if (this.user.stream_to_youtube && youtubeUrl)
+      dests.push({ label: 'YouTube', url: youtubeUrl });
+    if (this.user.stream_to_kick && kickUrl)
+      dests.push({ label: 'Kick', url: kickUrl });
+    if (this.user.stream_to_twitch && twitchUrl)
+      dests.push({ label: 'Twitch', url: twitchUrl });
     return dests;
   }
 

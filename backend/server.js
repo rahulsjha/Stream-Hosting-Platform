@@ -136,7 +136,7 @@ streamHealth.start();
         logger.info(`║  SIL IRL Hosting Platform v4.1  ONLINE       ║`);
         logger.info(`║  Port: ${String(config.port).padEnd(5)}  Env: ${config.nodeEnv.padEnd(15)}       ║`);
         logger.info(`╚══════════════════════════════════════════════╝`);
-        logger.info(`  → Open http://localhost:${config.port} in your browser`);
+        logger.info(`  → Open https://sil-api-308720634926.us-central1.run.app in your browser`);
         resolve();
       })
       .on('error', (err) => {
@@ -200,27 +200,36 @@ function startRestreamHeal() {
   setInterval(async () => {
     try {
       const { rows } = await db.query(
-        `SELECT ${FIELDS} FROM users WHERE is_live=true`
+        `SELECT id, username, stream_key, prefer_srt, ${FIELDS} FROM users WHERE is_live=true`
       );
       for (const user of rows) {
-        const liveInMTX = await isPathLiveInMediaMTX(user.stream_key);
+        const useSrtHealth = Boolean(user.prefer_srt);
 
-        if (!liveInMTX) {
-          // MediaMTX has no active publisher → stale is_live flag, clear it
-          if (restreamer.getSession(user.stream_key)) {
-            restreamer.stop(user.stream_key);
+        if (useSrtHealth) {
+          const liveInMTX = await isPathLiveInMediaMTX(user.stream_key);
+
+          if (!liveInMTX) {
+            // MediaMTX has no active publisher → stale is_live flag, clear it
+            if (restreamer.getSession(user.stream_key)) {
+              restreamer.stop(user.stream_key);
+            }
+            await db.query(
+              `UPDATE users SET is_live=false WHERE stream_key=$1`,
+              [user.stream_key]
+            );
+            logger.warn(`[Heal] ${user.username} marked is_live but no MediaMTX source – cleared`);
+            continue;
           }
-          await db.query(
-            `UPDATE users SET is_live=false WHERE stream_key=$1`,
-            [user.stream_key]
-          );
-          logger.warn(`[Heal] ${user.username} marked is_live but no MediaMTX source – cleared`);
-          continue;
-        }
 
-        // Stream really is live but no restream session → restart it
-        if (!restreamer.getSession(user.stream_key)) {
-          logger.warn(`[Heal] ${user.username} is_live + MediaMTX OK but no restream – restarting`);
+          // Stream really is live but no restream session → restart it
+          if (!restreamer.getSession(user.stream_key)) {
+            logger.warn(`[Heal] ${user.username} is_live + MediaMTX OK but no restream – restarting`);
+            restreamer.start(user.stream_key, user, 'srt');
+          }
+        } else if (!restreamer.getSession(user.stream_key)) {
+          // RTMP ingest lives on nginx-rtmp, so keep the stream alive if
+          // the DB says the user is live and just restore the relay session.
+          logger.warn(`[Heal] ${user.username} is_live + RTMP ingest but no restream – restarting`);
           restreamer.start(user.stream_key, user, 'rtmp');
         }
       }

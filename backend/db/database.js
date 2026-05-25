@@ -73,7 +73,7 @@ function resolveSslConfig() {
   // non-TLS poolers; enable elsewhere.
   const host = getDatabaseHost(connectionString);
   if (!host) return false;
-  if (host === 'localhost' || host === '127.0.0.1') return false;
+  if (host === '127.0.0.1' || host === '::1') return false;
   if (host.endsWith('.pooler.supabase.com')) return false;
 
   return { rejectUnauthorized: false };

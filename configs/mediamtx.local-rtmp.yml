@@ -1,16 +1,16 @@
-# MediaMTX config for LOCAL (no-Docker) RTMP ingest.
-# Runs RTMP on :1935 so OBS can connect to rtmp://localhost:1935/live.
-# Uses MediaMTX HTTP auth to call SIL backend /rtmp/auth.
+# MediaMTX config for RTMP ingest.
+# Runs RTMP on :1935 so OBS can connect to rtmp://34.46.51.228:1935/live.
+# Uses MediaMTX HTTP auth to call the deployed SIL backend /rtmp/auth.
 
 logLevel: info
 logDestinations: [stdout]
 
-# Use SIL backend as auth server (publish validation)
+# Use the deployed SIL backend as auth server (publish validation)
 authMethod: http
-authHTTPAddress: http://127.0.0.1:3000/rtmp/auth
+authHTTPAddress: https://sil-api-308720634926.us-central1.run.app/rtmp/auth
 
 api: true
-apiAddress: 127.0.0.1:9997
+apiAddress: :9997
 
 metrics: false
 
@@ -31,7 +31,7 @@ webrtc: false
 
 pathDefaults:
   runOnNotReady: >
-    curl -s -X POST http://127.0.0.1:3000/rtmp/done
+    curl -s -X POST https://sil-api-308720634926.us-central1.run.app/rtmp/done
     -H "Content-Type: application/x-www-form-urlencoded"
     -d "name=$MTX_PATH"
 
