@@ -43,6 +43,7 @@ const bool = (key, fallback) => {
 };
 
 const DEFAULT_INGEST_HOST = '34.46.51.228';
+const DEFAULT_INGEST_INTERNAL = '10.128.0.2';  // GCP internal IP for Cloud Run ↔ VM
 
 const serverPublicIp = (() => {
   const raw = (process.env.SERVER_PUBLIC_IP || '').trim();
@@ -63,6 +64,9 @@ const serverPublicIp = (() => {
   return hostOnly || DEFAULT_INGEST_HOST;
 })();
 
+// Internal IP used by Cloud Run to reach the RTMP server
+const rtmpInternalIp = (process.env.RTMP_INTERNAL_IP || '').trim() || DEFAULT_INGEST_INTERNAL;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Config object
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,6 +78,9 @@ module.exports = {
 
   /** Public-facing IP / hostname of this server (used in ingest URLs). */
   serverPublicIp,
+
+  /** Internal IP used by Cloud Run to reach the RTMP server for restreaming */
+  rtmpInternalIp,
 
   // ── Database (Supabase / PostgreSQL) ───────────────────────────────────────
   //   Third-party service: Supabase (https://supabase.com)
@@ -112,6 +119,7 @@ module.exports = {
   //   to this Node.js server for auth and stream-end handling.
   rtmp: {
     localServer: process.env.RTMP_LOCAL     || `rtmp://${serverPublicIp}:1935/live`,
+    restreamerServer: process.env.RTMP_RESTREAMER_SERVER || `rtmp://${rtmpInternalIp}:1935/live`,
     nginxApi:    process.env.NGINX_RTMP_API || 'http://127.0.0.1:8080/control',
   },
 
@@ -130,7 +138,7 @@ module.exports = {
   // ── Destination platforms ──────────────────────────────────────────────────
   //   RTMP base URLs – users append their platform stream key.
   platforms: {
-    youtube: { rtmpBase: 'rtmp://a.rtmp.youtube.com/live2' },
+    youtube: { rtmpBase: 'rtmps://a.rtmps.youtube.com/live2' },
     kick:    { rtmpBase: 'rtmps://fa723fc1b171.global-contribute.live-video.net:443/app' },
     twitch:  { rtmpBase: 'rtmp://live.twitch.tv/app' },
   },

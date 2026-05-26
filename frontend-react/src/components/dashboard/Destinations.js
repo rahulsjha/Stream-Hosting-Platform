@@ -2,6 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { userAPI } from '../../api/endpoints';
 
+const URL_BASES = {
+  youtube: 'rtmp://a.rtmp.youtube.com/live2',
+  twitch: 'rtmp://live.twitch.tv/app',
+  kick: 'rtmps://fa723fc1b171.global-contribute.live-video.net:443/app',
+};
+
 const Destinations = () => {
   const { user: authUser, fetchProfile } = useAuth();
   const username = authUser?.username || '';
@@ -48,6 +54,13 @@ const Destinations = () => {
     setTwKey(extractKey(profile.twitch_url, 'twitch'));
     setKkKey(extractKey(profile.kick_url, 'kick'));
   }, [extractKey]);
+
+  const buildPlatformUrl = useCallback((platform, key) => {
+    const base = URL_BASES[platform];
+    if (!base) return '';
+    const cleanKey = String(key || '').trim();
+    return cleanKey ? `${base}/${cleanKey}` : '';
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -117,7 +130,8 @@ const Destinations = () => {
       await userAPI.updateDestinations(buildYt, buildTw, buildKk, !!(buildYt), !!(buildTw), !!(buildKk));
       hasUserEdited.current = false;
       initialProfileLoaded.current = true;
-      loadSavedDestinations({
+      const updatedProfile = await fetchProfile({ clearOnFailure: false });
+      loadSavedDestinations(updatedProfile || {
         youtube_url: buildYt,
         twitch_url: buildTw,
         kick_url: buildKk,
@@ -144,12 +158,16 @@ const Destinations = () => {
             <label htmlFor="yt_url">YouTube RTMP URL</label>
             <input
               id="yt_url"
-              type="url"
+              type="text"
               placeholder="rtmp://a.rtmp.youtube.com/live2/..."
               value={ytUrl}
+              autoComplete="off"
+              spellCheck={false}
               onChange={(e) => {
                 hasUserEdited.current = true;
-                setYtUrl(e.target.value);
+                const nextValue = e.target.value;
+                setYtUrl(nextValue);
+                setYtKey(extractKey(nextValue, 'youtube'));
               }}
             />
               <small className="muted">Or enter only your YouTube stream key below</small>
@@ -160,7 +178,9 @@ const Destinations = () => {
                 value={ytKey}
                 onChange={(e) => {
                   hasUserEdited.current = true;
-                  setYtKey(e.target.value);
+                  const nextValue = e.target.value;
+                  setYtKey(nextValue);
+                  setYtUrl(buildPlatformUrl('youtube', nextValue));
                 }}
                 style={{ marginTop: '6px' }}
               />
@@ -171,12 +191,16 @@ const Destinations = () => {
             <label htmlFor="tw_url">Twitch RTMP URL</label>
             <input
               id="tw_url"
-              type="url"
+              type="text"
               placeholder="rtmp://live.twitch.tv/app/..."
               value={twUrl}
+              autoComplete="off"
+              spellCheck={false}
               onChange={(e) => {
                 hasUserEdited.current = true;
-                setTwUrl(e.target.value);
+                const nextValue = e.target.value;
+                setTwUrl(nextValue);
+                setTwKey(extractKey(nextValue, 'twitch'));
               }}
             />
             <small className="muted">Or enter only your Twitch stream key below</small>
@@ -187,7 +211,9 @@ const Destinations = () => {
               value={twKey}
               onChange={(e) => {
                 hasUserEdited.current = true;
-                setTwKey(e.target.value);
+                const nextValue = e.target.value;
+                setTwKey(nextValue);
+                setTwUrl(buildPlatformUrl('twitch', nextValue));
               }}
               style={{ marginTop: '6px' }}
             />
@@ -198,12 +224,16 @@ const Destinations = () => {
             <label htmlFor="kk_url">Kick RTMPS URL</label>
             <input
               id="kk_url"
-              type="url"
+              type="text"
               placeholder="rtmps://fa723fc1b171.global-contribute.live-video.net:443/app/..."
               value={kkUrl}
+              autoComplete="off"
+              spellCheck={false}
               onChange={(e) => {
                 hasUserEdited.current = true;
-                setKkUrl(e.target.value);
+                const nextValue = e.target.value;
+                setKkUrl(nextValue);
+                setKkKey(extractKey(nextValue, 'kick'));
               }}
             />
             <small className="muted">Or enter only your Kick stream key below</small>
@@ -214,7 +244,9 @@ const Destinations = () => {
               value={kkKey}
               onChange={(e) => {
                 hasUserEdited.current = true;
-                setKkKey(e.target.value);
+                const nextValue = e.target.value;
+                setKkKey(nextValue);
+                setKkUrl(buildPlatformUrl('kick', nextValue));
               }}
               style={{ marginTop: '6px' }}
             />

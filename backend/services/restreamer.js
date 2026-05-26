@@ -13,7 +13,7 @@
  *         │  pull (re-read local feed)
  *         ▼
  *   [One FFmpeg per destination – fully isolated]
- *     ├─► YouTube  rtmp://a.rtmp.youtube.com/live2/<key>
+ *     ├─► YouTube  rtmps://a.rtmps.youtube.com/live2/<key>
  *     ├─► Kick     rtmps://fa723fc1b171.global-contribute.live-video.net:443/app/<key>
  *     └─► Twitch   rtmp://live.twitch.tv/app/<key>
  *
@@ -58,7 +58,9 @@ class DestinationPusher extends EventEmitter {
       inputUrl  = `rtsp://${config.srt.server}:${config.srt.rtspPort}/${this.streamKey}`;
       inputArgs = ['-rtsp_transport', 'tcp'];
     } else {
-      inputUrl = `${config.rtmp.localServer}/${this.streamKey}`;
+      // Use internal RTMP server for restreamer (Cloud Run → ingest VM)
+      inputUrl = `${config.rtmp.restreamerServer}/${this.streamKey}`;
+      logger.info(`[DEBUG:Restreamer] Using config.rtmp.restreamerServer=${config.rtmp.restreamerServer}`);
     }
 
     return [

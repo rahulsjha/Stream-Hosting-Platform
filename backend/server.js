@@ -12,7 +12,7 @@
  *       │  local RTMP re-publish
  *       ▼
  *  [FFmpeg RestreamManager]
- *    ├── YouTube  rtmp://a.rtmp.youtube.com/live2/<key>
+ *    ├── YouTube  rtmps://a.rtmps.youtube.com/live2/<key>
  *    ├── Kick     rtmps://…/<key>
  *    └── Twitch   rtmp://live.twitch.tv/app/<key>
  *
@@ -38,6 +38,10 @@ const rateLimit  = require('express-rate-limit');
 
 const config     = require('./config');
 const logger     = require('./utils/logger');
+
+// DEBUG: Log the actual config values at startup
+logger.info('[Config] Startup config: serverPublicIp=%s, rtmpInternalIp=%s', config.serverPublicIp, config.rtmpInternalIp);
+logger.info('[Config] RTMP config: localServer=%s, restreamerServer=%s', config.rtmp.localServer, config.rtmp.restreamerServer);
 const db         = require('./db/database');
 const wsServer   = require('./services/websocketServer');
 

@@ -31,6 +31,7 @@ const fs             = require('fs');
 const logger         = require('../utils/logger');
 const db             = require('../db/database');
 const { broadcast }  = require('./websocketServer');
+const { normalizePlatformUrl } = require('../utils/platformUrls');
 
 const GRACE_MS       = parseInt(process.env.BRB_GRACE_MS) || 10_000;   // 10 s
 const BRB_UPLOADS    = path.join(__dirname, '../../uploads/brb');

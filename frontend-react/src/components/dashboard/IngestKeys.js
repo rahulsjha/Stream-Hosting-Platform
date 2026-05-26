@@ -75,9 +75,52 @@ const IngestKeys = () => {
         </div>
 
         <div style={{ maxWidth: '600px' }}>
+          {/* OBS Configuration Instructions */}
+          <div style={{ 
+            padding: '12px', 
+            marginBottom: '16px', 
+            backgroundColor: '#f0f0f0', 
+            borderLeft: '4px solid #007bff',
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}>
+            <strong>OBS Configuration:</strong>
+            <ol style={{ marginTop: '8px', marginBottom: 0, paddingLeft: '20px' }}>
+              <li>Go to <strong>Settings → Stream</strong></li>
+              <li>Service: <strong>Custom...</strong></li>
+              <li>Server: Copy the RTMP Server URL below</li>
+              <li>Stream Key: Copy the Stream Key below</li>
+              <li>Apply and start streaming</li>
+            </ol>
+          </div>
+
+          {/* RTMP Server URL (for Server field in OBS) */}
+          <div className="form-group">
+            <label>RTMP Server (for OBS "Server" field)</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                className="ingest-display-input"
+                value={rtmpUrl ? rtmpUrl.replace(/\/[^\/]*$/, '') : ''}
+                placeholder="RTMP server URL"
+                readOnly
+                tabIndex={-1}
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => copyToClipboard(rtmpUrl ? rtmpUrl.replace(/\/[^\/]*$/, '') : '')}
+              >
+                <i className="fa-solid fa-copy"></i> Copy
+              </button>
+            </div>
+            <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>e.g. rtmp://34.46.51.228:1935/live</small>
+          </div>
+
           {/* Stream Key */}
           <div className="form-group">
-            <label>Stream Key</label>
+            <label>Stream Key (for OBS "Stream Key" field)</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
@@ -96,11 +139,12 @@ const IngestKeys = () => {
                 <i className="fa-solid fa-copy"></i> Copy
               </button>
             </div>
+            <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>Only this key, NOT the full URL</small>
           </div>
 
-          {/* RTMP URL */}
+          {/* Full RTMP URL (for reference) */}
           <div className="form-group">
-            <label>RTMP Ingest URL</label>
+            <label>Full RTMP URL (for reference)</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
